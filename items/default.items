@@ -1,0 +1,11 @@
+Group    Home             "Our Home"       <house>
+
+Group    Corridor         "Corridor"       <corridor>      (Home)
+
+Switch   Corridor_Light   "Light"          <light>         (Corridor, gLight)      {channel=""}
+Switch   Corridor_Power   "Power Outlet"   <poweroutlet>   (Corridor, gPower)      {channel=""}
+
+Group:Switch:OR(ON, OFF)   gLight   "Light"          <light>         (Home)
+Group:Switch:OR(ON, OFF)   gPower   "Power Outlet"   <poweroutlet>   (Home)
+
+Switch NormallyClosedRelay "Normally Closed Relay" { gpio="pin:2 activelow:yes initialValue:high" }
