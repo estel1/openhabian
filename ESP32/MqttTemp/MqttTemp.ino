@@ -11,10 +11,17 @@
 const char* ssid        = "Keenetic-0079" ;
 const char* password    = "yoHwLp6B" ;
 const char* mqtt_server = "192.168.1.54" ;
+const char* mqtt_client = "PumpClient" ;
+
+const int RELAY_PUMP_PIN  = T0 ;
+const int DHT_PIN         = T1 ;
+const int BTN_ON_PIN      = T8 ;
+const int BTN_OFF_PIN     = T9 ;
+ 
 
 WiFiClient espClient ;
 PubSubClient client(espClient) ;
-DHT dht(T1,DHT11) ;
+DHT dht(DHT_PIN,DHT11) ;
 WebServer server(80) ;
 
 long lastMsg = 0 ;
@@ -28,18 +35,22 @@ float humidity = 0 ;
 void handleRoot();              // function prototypes for HTTP handlers
 void handleNotFound();
 
+int restartCount = 0 ;
 const int wdtTimeout = 15000;  //time in ms to trigger the watchdog
 hw_timer_t *timer = NULL;
 
 void IRAM_ATTR resetModule() {
   ets_printf("reboot\n") ;
+  restartCount++ ;
   esp_restart_noos() ;
 }
 
 void setup() {
 
   pinMode(LED_BUILTIN, OUTPUT) ;
-  pinMode(T0, OUTPUT) ;
+  pinMode(RELAY_PUMP_PIN, OUTPUT) ;
+  pinMode(BTN_ON_PIN,INPUT) ;
+  pinMode(BTN_OFF_PIN,INPUT) ;
   digitalWrite(LED_BUILTIN, HIGH) ;   // turn the LED on (HIGH is the voltage level)
 
   
@@ -108,15 +119,16 @@ void callback(char* topic, byte* message, unsigned int length) {
     if (message[0]=='0')
     {
       digitalWrite(LED_BUILTIN, HIGH) ;   // turn the LED on (HIGH is the voltage level)
-      digitalWrite(T0, HIGH) ;   // turn the LED on (HIGH is the voltage level)
+      digitalWrite(RELAY_PUMP_PIN, HIGH) ;   // turn the LED on (HIGH is the voltage level)
     }
     else
     {
       digitalWrite(LED_BUILTIN, LOW) ;   // turn the LED on (HIGH is the voltage level)
-      digitalWrite(T0, LOW) ;   // turn the LED on (HIGH is the voltage level)
+      digitalWrite(RELAY_PUMP_PIN, LOW) ;   // turn the LED on (HIGH is the voltage level)
     }
   }
-  
+
+  /*
   for (int i = 0; i < length; i++) {
     Serial.print((char)message[i]);
     messageTemp += (char)message[i];
@@ -132,14 +144,15 @@ void callback(char* topic, byte* message, unsigned int length) {
     if(messageTemp == "on"){
       Serial.println("on");
       digitalWrite(LED_BUILTIN, HIGH) ;   // turn the LED on (HIGH is the voltage level)
-      digitalWrite(T0, HIGH) ;   // turn the LED on (HIGH is the voltage level)
+      //digitalWrite(T0, HIGH) ;   // turn the LED on (HIGH is the voltage level)
     }
     else if(messageTemp == "off"){
       Serial.println("off");
       digitalWrite(LED_BUILTIN, LOW) ;   // turn the LED on (HIGH is the voltage level)
-      digitalWrite(T0, LOW) ;   // turn the LED on (HIGH is the voltage level)
+      //digitalWrite(T0, LOW) ;   // turn the LED on (HIGH is the voltage level)
     }
   }
+  */
 }
 
 void reconnect() {
@@ -147,7 +160,7 @@ void reconnect() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     // Attempt to connect
-    if (client.connect("ESP8266Client")) {
+    if (client.connect(mqtt_client)) {
       Serial.println("connected");
       // Subscribe
       client.subscribe("pump");
@@ -216,6 +229,12 @@ void handleRoot() {
   message += "Humidity: " ;
   message += humString ;
   message += " %\n" ;
+  message += "restart count: " ;
+  message += restartCount ;
+  message += "\n" ;
+  message += "BTN_ON_PIN: " ;
+  message += digitalRead(BTN_ON_PIN) ;
+  message += "\n" ;
   
   server.send(200, "text/plain", message );   // Send HTTP status 200 (Ok) and send some text to the browser/client
   

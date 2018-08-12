@@ -1,21 +1,20 @@
-sitemap default label="Our Home" {
+sitemap default label="Дом" {
     Frame {
-        Group item=Corridor
-    }
-
-    Frame {
-        Text label="Light" icon="light" {
+        Text label="Освещение" icon="light" {
             Default item=gpio_pin7_light_corridor label="Корридор"
             Default item=gpio_pin8_light_terrace label="Терасса"
         }
 
-        Text label="Power Outlet" icon="poweroutlet" {
+        Text label="Розетки" icon="poweroutlet" {
             Default item=gpio_pin2_pwr_corridor label="коридор"
             Default item=gpio_pin3_pwr_big label="Большая комната"
             Default item=gpio_pin4_pwr_kitchen label="Кухня"
             Default item=gpio_pin5_pwr_boiler label="Туалет"
             Default item=gpio_pin6_pwr_2ndfloor label="2й этаж"
             Default item=mqtt_pump label="Колодец"
+        }
+        Text label="Датчики" icon="humidity"
+        {
             Text item=mqtt_temperature icon="temperature"
             Text item=mqtt_humidity icon="humidity"
         }
