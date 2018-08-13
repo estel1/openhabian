@@ -10,7 +10,7 @@
 // Replace the next variables with your SSID/Password combination
 const char* ssid        = "emg" ;
 const char* password    = "emg" ;
-const int data_port   = 8080 ;
+const int data_port     = 8080 ;
 
 volatile unsigned char TXBuf[PACKETLEN] ;  //The transmission packet
 
@@ -50,60 +50,45 @@ void setup()
 
     setup_wifi() ;
 
-    server.on("/", handleRoot);               // Call the 'handleRoot' function when a client requests URI "/"
-    server.onNotFound(handleNotFound);        // When a client requests an unknown URI (i.e. something other than "/"), call function "handleNotFound"
-    server.begin() ;                           // Actually start the server
+    httpServer.on("/", handleRoot);               // Call the 'handleRoot' function when a client requests URI "/"
+    httpServer.onNotFound(handleNotFound);        // When a client requests an unknown URI (i.e. something other than "/"), call function "handleNotFound"
+    httpServer.begin() ;                           // Actually start the server
     Serial.println("HTTP server started") ;
+    
+    tcpServer.begin() ;
 
     digitalWrite(LED_BUILTIN, LOW) ;   // turn the LED on (HIGH is the voltage level)
 }
 
-void setup_wifi() {
-  delay(10) ;
-  // We start by connecting to a WiFi network
-  Serial.println() ;
-  Serial.print("Starting softAP...\n") ;
-  Serial.println(ssid) ;
+void setup_wifi() 
+{
+    delay(10) ;
+    // We start by connecting to a WiFi network
+    Serial.println() ;
+    Serial.print("Starting softAP...\n") ;
+    Serial.println(ssid) ;
 
-  WiFi.softAP(ssid, password) ;
+    WiFi.softAP(ssid, password) ;
 
-  Serial.print("IP address: ");
-  Serial.println(WiFi.softAPIP());  
+    Serial.print("IP address: ");
+    Serial.println(WiFi.softAPIP());  
 
-}
-
-void reconnect() {
-  // Loop until we're reconnected
-  while (!client.connected()) 
-  {
-    Serial.print("Attempting TCP connection...") ;
-    // Attempt to connect
-    if (client.connect(matlab_addr,matlab_port)) {
-      Serial.println("connected");
-    } else {
-      Serial.print("failed, rc=");
-      Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
-      // Wait 5 seconds before retrying
-      delay(5000) ;
-    }
-  }
 }
 
 void loop() 
 {  
-  if (!client.connected()) 
-  {
-    reconnect() ;
-  }
-  server.handleClient() ;                    // Listen for HTTP requests from clients
-  
+    WiFiClient client = server.available() ;     
+     if (client) {                             // if you get a client,
+        Serial.println();
+        Serial.println("New Client.");          // print a message out the serial port
+        String currentLine = "";                // make a String to hold incoming data from the client
+    while (client.connected()) {          server.handleClient() ;                    // Listen for HTTP requests from clients  
 }
 
 void handleRoot() {
-  String message ;
-  message += "ESP32S EMG platform\n" ;  
-  server.send(200, "text/plain", message );   // Send HTTP status 200 (Ok) and send some text to the browser/client  
+    String message ;
+    message += "ESP32S EMG platform\n" ;  
+    server.send(200, "text/plain", message );   // Send HTTP status 200 (Ok) and send some text to the browser/client  
 }
 
 void handleNotFound(){
