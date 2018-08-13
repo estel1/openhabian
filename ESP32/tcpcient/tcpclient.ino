@@ -34,7 +34,7 @@ void setup()
     TXBuf[6] = 0x02;    //CH2 High Byte
     TXBuf[7] = 0x00;    //CH2 Low Byte
     TXBuf[8] = 0x02;    //CH3 High Byte
-    TXBuf[9] = 0x00;    //CH3 Low Byte
+    TXBuf[9] = 0x00;    //CH3 Low Byte 
     TXBuf[10] = 0x02;   //CH4 High Byte
     TXBuf[11] = 0x00;   //CH4 Low Byte
     TXBuf[12] = 0x02;   //CH5 High Byte
