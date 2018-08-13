@@ -56,6 +56,7 @@ void setup()
     Serial.println("HTTP server started") ;
     
     tcpServer.begin() ;
+    Serial.println("TCP server started") ;
 
     digitalWrite(LED_BUILTIN, LOW) ;   // turn the LED on (HIGH is the voltage level)
 }
@@ -70,19 +71,22 @@ void setup_wifi()
 
     WiFi.softAP(ssid, password) ;
 
-    Serial.print("IP address: ");
-    Serial.println(WiFi.softAPIP());  
+    Serial.print("IP address: ") ;
+    Serial.println(WiFi.softAPIP()) ;
 
 }
 
 void loop() 
 {  
-    WiFiClient client = server.available() ;     
-     if (client) {                             // if you get a client,
-        Serial.println();
-        Serial.println("New Client.");          // print a message out the serial port
-        String currentLine = "";                // make a String to hold incoming data from the client
-    while (client.connected()) {          server.handleClient() ;                    // Listen for HTTP requests from clients  
+    WiFiClient client = tcpServer.available() ;     
+    if (client) 
+    {
+        if (client.connected()) 
+        {
+            client.write(TXBuf,PACKETLEN) ;
+        }
+    }        
+    server.handleClient() ;
 }
 
 void handleRoot() {
