@@ -81,17 +81,21 @@ void loop()
     
     // Handle TCP server
     long now = millis() ;
-    if ( now - lastMsg > 10 ) 
+    if ( now - lastMsg > 100 ) 
     {
         lastMsg = now ;
-        TXBuf[3] = TXBuf[3] + 1 ; // update packet counter
         
         WiFiClient client = tcpServer.available() ;
         if (client) 
         {
             if (client.connected()) 
             {
-                client.write(TXBuf,PACKETLEN) ;
+                // Send 100 samples per 100 ms = 1kHz sampling
+                for (int i=0;i<100;i++)
+                {
+                    client.write(TXBuf,PACKETLEN) ;
+                    TXBuf[3] = TXBuf[3] + 1 ; // update packet counter
+                }
             }
         }       
         
