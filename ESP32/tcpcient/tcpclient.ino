@@ -78,15 +78,28 @@ void setup_wifi()
 
 void loop() 
 {  
-    WiFiClient client = tcpServer.available() ;     
-    if (client) 
+    
+    // Handle TCP server
+    long now = millis() ;
+    if ( now - lastMsg > 10 ) 
     {
-        if (client.connected()) 
+        lastMsg = now ;
+        TXBuf[3] = TXBuf[3] + 1 ; // update packet counter
+        
+        WiFiClient client = tcpServer.available() ;
+        if (client) 
         {
-            client.write(TXBuf,PACKETLEN) ;
-        }
-    }        
-    server.handleClient() ;
+            if (client.connected()) 
+            {
+                client.write(TXBuf,PACKETLEN) ;
+            }
+        }       
+        
+    }
+    
+    // Handle HTTP requests
+    httpServer.handleClient() ;
+    
 }
 
 void handleRoot() {
