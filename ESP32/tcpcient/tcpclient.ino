@@ -12,7 +12,8 @@ const char* ssid        = "emg" ;
 const char* password    = "emg" ;
 const int data_port     = 8080 ;
 
-volatile unsigned char TXBuf[PACKETLEN] ;  //The transmission packet
+long lastMsg = 0 ;
+unsigned char TXBuf[PACKETLEN] ;  //The transmission packet
 
 WebServer httpServer(80) ;
 WiFiServer tcpServer(data_port) ;
@@ -106,12 +107,14 @@ void loop()
     
 }
 
-void handleRoot() {
+void handleRoot() 
+{
     String message ;
     message += "ESP32S EMG platform\n" ;  
-    server.send(200, "text/plain", message );   // Send HTTP status 200 (Ok) and send some text to the browser/client  
+    httpServer.send(200, "text/plain", message );   // Send HTTP status 200 (Ok) and send some text to the browser/client  
 }
 
-void handleNotFound(){
-  server.send(404, "text/plain", "404: Not found"); // Send HTTP status 404 (Not Found) when there's no handler for the URI in the request
+void handleNotFound()
+{
+    httpServer.send(404, "text/plain", "404: Not found"); // Send HTTP status 404 (Not Found) when there's no handler for the URI in the request
 }
