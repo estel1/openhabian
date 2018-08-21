@@ -12,3 +12,7 @@ $ git clone https://github.com/estel1/openhabian
 ```
 5. [ESP32S pinout](https://einstronic.com/wp-content/uploads/2017/06/NodeMCU-32S-Catalogue.pdf)
 6. [ESP01 pinout](https://ecksteinimg.de/Datasheet/Ai-thinker%20ESP-01%20EN.pdf)
+
+## Подключение Relay
+[Relay Isolation](https://arduino-info.wikispaces.com/RelayIsolation)
+[4 ways to eliminate ESP8266 resets](https://internetofhomethings.com/homethings/?p=396)
