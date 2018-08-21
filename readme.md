@@ -15,4 +15,5 @@ $ git clone https://github.com/estel1/openhabian
 
 ## Подключение Relay
 [Relay Isolation](https://arduino-info.wikispaces.com/RelayIsolation)
+
 [4 ways to eliminate ESP8266 resets](https://internetofhomethings.com/homethings/?p=396)
