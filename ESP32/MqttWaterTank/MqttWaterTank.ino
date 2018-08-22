@@ -11,9 +11,8 @@
 const char* ssid        = "Keenetic-0079" ;
 const char* password    = "yoHwLp6B" ;
 const char* mqtt_server = "192.168.1.54" ;
-const char* mqtt_client = "PumpClient" ;
+const char* mqtt_client = "WaterTankClient" ;
 
-const int RELAY_PUMP_PIN  = T0 ;
 const int DHT_PIN         = T1 ;
 const int BTN_ON_PIN      = T8 ;
 const int BTN_OFF_PIN     = T9 ;
@@ -33,43 +32,42 @@ int pump_ctl_state = -1 ;
 float temperature = 0 ;
 float humidity = 0 ;
 
-void handleRoot();              // function prototypes for HTTP handlers
-void handleNotFound();
+void handleRoot() ;              // function prototypes for HTTP handlers
+void handleNotFound() ;
 
 int restartCount = 0 ;
-const int wdtTimeout = 15000;  //time in ms to trigger the watchdog
+const int wdtTimeout = 15000 ;  //time in ms to trigger the watchdog
 hw_timer_t *timer = NULL;
 
-void IRAM_ATTR resetModule() 
-{
+void IRAM_ATTR resetModule() {
   ets_printf("reboot\n") ;
   restartCount++ ;
   esp_restart_noos() ;
 }
 
-void setup() 
-{
+void setup() {
 
   pinMode(LED_BUILTIN, OUTPUT) ;
-  pinMode(RELAY_PUMP_PIN, OUTPUT) ;
   pinMode(BTN_ON_PIN,INPUT_PULLUP) ;
   pinMode(BTN_OFF_PIN,INPUT_PULLUP) ;
-  digitalWrite(LED_BUILTIN, LOW) ;   // turn the LED on (HIGH is the voltage level)
+  digitalWrite(LED_BUILTIN, HIGH) ;   // turn the LED on (HIGH is the voltage level)
+
   
   Serial.begin(115200) ;
   Serial.print("LED_BUILTIN=" ) ;
   Serial.println(LED_BUILTIN) ;
+
   
-  timer = timerBegin(0, 80, true);                  //timer 0, div 80
-  timerAttachInterrupt(timer, &resetModule, true);  //attach callback
-  timerAlarmWrite(timer, wdtTimeout * 1000, false); //set time in us
-  timerAlarmEnable(timer);                          //enable interrupt
+  timer = timerBegin(0, 80, true) ;                  //timer 0, div 80
+  timerAttachInterrupt(timer, &resetModule, true) ;  //attach callback
+  timerAlarmWrite(timer, wdtTimeout * 1000, false) ; //set time in us
+  timerAlarmEnable(timer) ;                          //enable interrupt
   
   setup_wifi() ;
   client.setServer(mqtt_server, 1883) ;
   client.setCallback(callback) ;
 
-  if (MDNS.begin("esp32s")) 
+  if (MDNS.begin("watertank")) 
   {
     Serial.println("mDNS responder started") ;
   } 
@@ -78,13 +76,14 @@ void setup()
     Serial.println("Error setting up MDNS responder!") ;
   }  
   
-  server.on("/", handleRoot);               // Call the 'handleRoot' function when a client requests URI "/"
-  server.onNotFound(handleNotFound);        // When a client requests an unknown URI (i.e. something other than "/"), call function "handleNotFound"
+  server.on("/", handleRoot) ;               // Call the 'handleRoot' function when a client requests URI "/"
+  server.onNotFound(handleNotFound) ;        // When a client requests an unknown URI (i.e. something other than "/"), call function "handleNotFound"
   server.begin() ;                           // Actually start the server
   Serial.println("HTTP server started") ;
   
   dht.begin() ;
   
+  digitalWrite(LED_BUILTIN, LOW) ;   // turn the LED on (HIGH is the voltage level)
 
 }
 
@@ -108,67 +107,14 @@ void setup_wifi() {
   Serial.println(WiFi.localIP()) ;
 }
 
-void callback(char* topic, byte* message, unsigned int length) 
-{
-  Serial.print("Message arrived on topic: ");
-  Serial.print(topic);
-  Serial.print(". Message: ");
-  
-  if (length>0)
-  {
-    if (message[0]=='0')
-    {
-      //digitalWrite(LED_BUILTIN, HIGH) ;   // turn the LED on (HIGH is the voltage level)
-      digitalWrite(RELAY_PUMP_PIN, HIGH) ;   // turn the LED on (HIGH is the voltage level)
-      Serial.println("Off") ;
-    }
-    else
-    {
-      //digitalWrite(LED_BUILTIN, LOW) ;   // turn the LED on (HIGH is the voltage level)
-      digitalWrite(RELAY_PUMP_PIN, LOW) ;   // turn the LED on (HIGH is the voltage level)
-      Serial.println("On") ;
-    }
-  }
-
-  /*
-  for (int i = 0; i < length; i++) {
-    Serial.print((char)message[i]);
-    messageTemp += (char)message[i];
-  }
-  Serial.println();
-
-  // Feel free to add more if statements to control more GPIOs with MQTT
-
-  // If a message is received on the topic esp32/output, you check if the message is either "on" or "off". 
-  // Changes the output state according to the message
-  if (String(topic) == "pump") {
-    Serial.print("Changing output to ");
-    if(messageTemp == "on"){
-      Serial.println("on");
-      digitalWrite(LED_BUILTIN, HIGH) ;   // turn the LED on (HIGH is the voltage level)
-      //digitalWrite(T0, HIGH) ;   // turn the LED on (HIGH is the voltage level)
-    }
-    else if(messageTemp == "off"){
-      Serial.println("off");
-      digitalWrite(LED_BUILTIN, LOW) ;   // turn the LED on (HIGH is the voltage level)
-      //digitalWrite(T0, LOW) ;   // turn the LED on (HIGH is the voltage level)
-    }
-  }
-  */
-}
 
 void reconnect() {
   // Loop until we're reconnected
-  while (!client.connected()) 
-  {
-    digitalWrite(LED_BUILTIN, LOW) ;   // turn the LED on (HIGH is the voltage level)
+  while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     // Attempt to connect
     if (client.connect(mqtt_client)) {
-      Serial.println("connected") ;
-      // Subscribe
-      client.subscribe("pump") ;
-      digitalWrite(LED_BUILTIN, HIGH) ;   // turn the LED on (HIGH is the voltage level)
+      Serial.println("connected");
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -178,77 +124,60 @@ void reconnect() {
     }
   }
 }
-
 void loop() {
   
   timerWrite(timer, 0) ; //reset timer (feed watchdog)
   
   if (!client.connected()) {
-    reconnect() ;
+    reconnect();
   }
-
+  client.loop();
   server.handleClient() ;                    // Listen for HTTP requests from clients
 
   int btnOn = digitalRead( BTN_ON_PIN ) ;
   int btnOff = digitalRead( BTN_OFF_PIN ) ;
-  if (btnOn==LOW && btnOff==HIGH)
+  if (btnOn==0 && btnOn==0)
   { 
     // both btn pressed - do nothing   
     Serial.println("Disabled button combination") ;
   }
-  else if (btnOn==LOW)
+  else if (btnOn==0)
   {
     if ( pump_ctl_state!=1 )
     {
       pump_ctl_state  = 1 ;
       client.publish( "pump", "1" ) ;
-      //callback("pump", (byte*)"1", 1) ;
       Serial.println("BTN_ON pressed") ;
       pumpStarted = millis() ;
     }  
   }
-  else if (btnOff==HIGH)
+  else if (btnOff==0)
   {
     if ( pump_ctl_state!=0 )
     {
       pump_ctl_state  = 0 ;
-      //callback("pump", (byte*)"0", 1) ;
       client.publish( "pump", "0" ) ;
       Serial.println("BTN_OFF pressed") ;
     }  
   }
 
-  client.loop() ;
-  
   unsigned long now = millis() ;
-  /*
   if (pump_ctl_state==1 && now-pumpStarted>1000*60*10)
   {    
       Serial.println("Switch off pump due to timeout") ;
       pump_ctl_state  = 0 ;
       client.publish( "pump", "0" ) ;
   }
-  */
 
   if (now - lastMsg > 5000) {
     lastMsg = now;
 
     temperature = dht.readTemperature() ;
-    //Serial.print("Temperature: ") ;
-    //Serial.println(temperature) ;
-    
-    // Temperature in Celsius
-    //temperature = bme.readTemperature();   
-    // Uncomment the next line to set temperature in Fahrenheit 
-    // (and comment the previous temperature line)
-    //temperature = 1.8 * bme.readTemperature() + 32; // Temperature in Fahrenheit
-    
-    // Convert the value to a char array
     char tempString[8];
     dtostrf(temperature, 1, 2, tempString);
     Serial.print("Temperature: ");
     Serial.println(tempString);
-    client.publish("esp32/temperature", tempString);
+    client.publish("watertank/temperature", tempString);
 
     humidity = dht.readHumidity() ;
     
@@ -257,7 +186,7 @@ void loop() {
     dtostrf(humidity, 1, 2, humString);
     Serial.print("Humidity: ");
     Serial.println(humString);
-    client.publish("esp32/humidity", humString);
+    client.publish("watertank/humidity", humString);
   }
 }
 
@@ -268,7 +197,7 @@ void handleRoot() {
   dtostrf(temperature, 1, 2, tempString) ;
   char humString[8];
   dtostrf(humidity, 1, 2, humString) ;
-  message += "ESP32S\n" ;
+  message += "WATERTANK\n" ;
   message += "Temperature: " ;
   message += tempString ;
   message += " C\n" ;
@@ -289,8 +218,7 @@ void handleRoot() {
   
 }
 
-void handleNotFound()
-{
+void handleNotFound(){
   server.send(404, "text/plain", "404: Not found"); // Send HTTP status 404 (Not Found) when there's no handler for the URI in the request
 }
 
