@@ -38,24 +38,21 @@ int restartCount = 0 ;
 const int wdtTimeout = 15000 ;  //time in ms to trigger the watchdog
 hw_timer_t *timer = NULL;
 
-void IRAM_ATTR resetModule() {
+void IRAM_ATTR resetModule() 
+{
   ets_printf("reboot\n") ;
   restartCount++ ;
   esp_restart_noos() ;
 }
 
-void setup() {
-
+void setup() 
+{
   pinMode(LED_BUILTIN, OUTPUT) ;
   pinMode(trigPin,OUTPUT) ;
   pinMode(echoPin,OUTPUT) ;
   digitalWrite(LED_BUILTIN, LOW) ;   // turn the LED off
-
   
   Serial.begin(115200) ;
-  Serial.print("LED_BUILTIN=" ) ;
-  Serial.println(LED_BUILTIN) ;
-
   
   timer = timerBegin(0, 80, true) ;                  //timer 0, div 80
   timerAttachInterrupt(timer, &resetModule, true) ;  //attach callback
@@ -81,9 +78,6 @@ void setup() {
   Serial.println("HTTP server started") ;
   
   dht.begin() ;
-  
-  digitalWrite(LED_BUILTIN, LOW) ;   // turn the LED on (HIGH is the voltage level)
-
 }
 
 void setup_wifi() {
