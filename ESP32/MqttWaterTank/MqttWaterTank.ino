@@ -6,6 +6,7 @@
 #include <esp_system.h>
 
 // https://einstronic.com/wp-content/uploads/2017/06/NodeMCU-32S-Catalogue.pdf
+// https://www.instructables.com/id/Distance-Measurement-Using-HC-SR04-Via-NodeMCU/
 
 // Replace the next variables with your SSID/Password combination
 const char* ssid        = "Keenetic-0079" ;
@@ -14,9 +15,8 @@ const char* mqtt_server = "192.168.1.54" ;
 const char* mqtt_client = "WaterTankClient" ;
 
 const int DHT_PIN         = T1 ;
-const int BTN_ON_PIN      = T8 ;
-const int BTN_OFF_PIN     = T9 ;
- 
+const int trigPin         = 2 ;
+const int echoPin         = 0 ;  
 
 WiFiClient espClient ;
 PubSubClient client(espClient) ;
