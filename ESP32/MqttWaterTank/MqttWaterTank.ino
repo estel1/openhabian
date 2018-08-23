@@ -5,8 +5,10 @@
 #include <WebServer.h>   // Include the WebServer library
 #include <esp_system.h>
 
-// https://einstronic.com/wp-content/uploads/2017/06/NodeMCU-32S-Catalogue.pdf
+// this code is based on example:
 // https://www.instructables.com/id/Distance-Measurement-Using-HC-SR04-Via-NodeMCU/
+
+// other resources:
 // http://esp32.net/images/Ai-Thinker/NodeMCU-32S/Ai-Thinker_NodeMCU-32S_DiagramSchematic.png
 // http://esp32.net/images/Ai-Thinker/NodeMCU-32S/Ai-Thinker_NodeMCU-32S_DiagramPinout.png
 
@@ -15,6 +17,7 @@ const char* ssid        = "Keenetic-0079" ;
 const char* password    = "yoHwLp6B" ;
 const char* mqtt_server = "192.168.1.54" ;
 const char* mqtt_client = "WaterTankClient" ;
+const int   tank_height = 120 ; // Tank height, cm
 
 const int DHT_PIN         = T1 ;
 const int trigPin         = T8 ;
@@ -138,44 +141,34 @@ void loop()
   client.loop() ;
   server.handleClient() ;                    // Listen for HTTP requests from clients
 
-  int btnOn = digitalRead( BTN_ON_PIN ) ;
-  int btnOff = digitalRead( BTN_OFF_PIN ) ;
-  if (btnOn==0 && btnOn==0)
-  { 
-    // both btn pressed - do nothing   
-    Serial.println("Disabled button combination") ;
-  }
-  else if (btnOn==0)
-  {
-    if ( pump_ctl_state!=1 )
-    {
-      pump_ctl_state  = 1 ;
-      client.publish( "pump", "1" ) ;
-      Serial.println("BTN_ON pressed") ;
-      pumpStarted = millis() ;
-    }  
-  }
-  else if (btnOff==0)
-  {
-    if ( pump_ctl_state!=0 )
-    {
-      pump_ctl_state  = 0 ;
-      client.publish( "pump", "0" ) ;
-      Serial.println("BTN_OFF pressed") ;
-    }  
-  }
-
   unsigned long now = millis() ;
-  if (pump_ctl_state==1 && now-pumpStarted>1000*60*10)
-  {    
-      Serial.println("Switch off pump due to timeout") ;
-      pump_ctl_state  = 0 ;
-      client.publish( "pump", "0" ) ;
-  }
+  if (now - lastMsg > 5000) 
+  {
+    lastMsg = now ;
 
-  if (now - lastMsg > 5000) {
-    lastMsg = now;
+    // https://www.instructables.com/id/Distance-Measurement-Using-HC-SR04-Via-NodeMCU/
+    // Clears the trigPin
+    digitalWrite(trigPin, LOW) ;
+    delayMicroseconds(2) ;
 
+    // Sets the trigPin on HIGH state for 10 micro seconds
+    digitalWrite(trigPin, HIGH) ;
+    delayMicroseconds(10) ;
+    digitalWrite(trigPin, LOW) ;
+
+    // Reads the echoPin, returns the sound wave travel time in microseconds
+    long duration = pulseIn(echoPin, HIGH) ;
+
+    // Calculating the distance
+    int distance = duration*0.034/2 ;
+    // Prints the distance on the Serial Monitor
+    Serial.print("Distance is: ") ;
+    Serial.print(distance) ;
+    Serial.println("cm") ;
+    int water_level = 100.0*(tank_height-distance)/tank_height ;
+    char levelString[8] ;
+    dtostrf(water_level, 1, 2, levelString) ;
+    
     temperature = dht.readTemperature() ;
     char tempString[8];
     dtostrf(temperature, 1, 2, tempString);
@@ -194,7 +187,8 @@ void loop()
   }
 }
 
-void handleRoot() {
+void handleRoot() 
+{
   unsigned long now = millis() ;
   String message ;
   char tempString[8];
@@ -222,7 +216,8 @@ void handleRoot() {
   
 }
 
-void handleNotFound(){
+void handleNotFound()
+{
   server.send(404, "text/plain", "404: Not found"); // Send HTTP status 404 (Not Found) when there's no handler for the URI in the request
 }
 
