@@ -8,6 +8,7 @@
 // https://einstronic.com/wp-content/uploads/2017/06/NodeMCU-32S-Catalogue.pdf
 // https://www.instructables.com/id/Distance-Measurement-Using-HC-SR04-Via-NodeMCU/
 // http://esp32.net/images/Ai-Thinker/NodeMCU-32S/Ai-Thinker_NodeMCU-32S_DiagramSchematic.png
+// http://esp32.net/images/Ai-Thinker/NodeMCU-32S/Ai-Thinker_NodeMCU-32S_DiagramPinout.png
 
 // Replace the next variables with your SSID/Password combination
 const char* ssid        = "Keenetic-0079" ;
@@ -80,7 +81,8 @@ void setup()
   dht.begin() ;
 }
 
-void setup_wifi() {
+void setup_wifi() 
+{
   delay(10) ;
   // We start by connecting to a WiFi network
   Serial.println() ;
@@ -89,8 +91,9 @@ void setup_wifi() {
 
   WiFi.begin(ssid, password) ;
 
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
+  while (WiFi.status() != WL_CONNECTED) 
+  {
+    delay(500) ;
     Serial.print(".") ;
   }
 
@@ -100,15 +103,21 @@ void setup_wifi() {
   Serial.println(WiFi.localIP()) ;
 }
 
-
-void reconnect() {
+void reconnect() 
+{
   // Loop until we're reconnected
-  while (!client.connected()) {
+  while (!client.connected()) 
+  {
+    digitalWrite(LED_BUILTIN, LOW) ;   // turn the LED off
     Serial.print("Attempting MQTT connection...");
     // Attempt to connect
-    if (client.connect(mqtt_client)) {
-      Serial.println("connected");
-    } else {
+    if (client.connect(mqtt_client)) 
+    {
+      digitalWrite(LED_BUILTIN, HIGH) ;   // turn the LED off
+      Serial.println("connected") ;
+    } 
+    else 
+    {
       Serial.print("failed, rc=");
       Serial.print(client.state());
       Serial.println(" try again in 5 seconds");
@@ -117,14 +126,16 @@ void reconnect() {
     }
   }
 }
-void loop() {
+
+void loop() 
+{  
+  timerWrite(timer, 0) ; //reset timer
   
-  timerWrite(timer, 0) ; //reset timer (feed watchdog)
-  
-  if (!client.connected()) {
-    reconnect();
+  if (!client.connected()) 
+  {
+    reconnect() ;
   }
-  client.loop();
+  client.loop() ;
   server.handleClient() ;                    // Listen for HTTP requests from clients
 
   int btnOn = digitalRead( BTN_ON_PIN ) ;
