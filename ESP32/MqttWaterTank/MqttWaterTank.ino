@@ -7,6 +7,7 @@
 
 // https://einstronic.com/wp-content/uploads/2017/06/NodeMCU-32S-Catalogue.pdf
 // https://www.instructables.com/id/Distance-Measurement-Using-HC-SR04-Via-NodeMCU/
+// http://esp32.net/images/Ai-Thinker/NodeMCU-32S/Ai-Thinker_NodeMCU-32S_DiagramSchematic.png
 
 // Replace the next variables with your SSID/Password combination
 const char* ssid        = "Keenetic-0079" ;
@@ -15,8 +16,8 @@ const char* mqtt_server = "192.168.1.54" ;
 const char* mqtt_client = "WaterTankClient" ;
 
 const int DHT_PIN         = T1 ;
-const int trigPin         = 2 ;
-const int echoPin         = 0 ;  
+const int trigPin         = T8 ;
+const int echoPin         = T9 ;  
 
 WiFiClient espClient ;
 PubSubClient client(espClient) ;
@@ -24,11 +25,9 @@ DHT dht(DHT_PIN,DHT11) ;
 WebServer server(80) ;
 
 unsigned long lastMsg = 0 ;
-unsigned long pumpStarted = 0 ;
 char msg[50] ;
 int value = 0 ;
 
-int pump_ctl_state = -1 ;
 float temperature = 0 ;
 float humidity = 0 ;
 
@@ -48,9 +47,9 @@ void IRAM_ATTR resetModule() {
 void setup() {
 
   pinMode(LED_BUILTIN, OUTPUT) ;
-  pinMode(BTN_ON_PIN,INPUT_PULLUP) ;
-  pinMode(BTN_OFF_PIN,INPUT_PULLUP) ;
-  digitalWrite(LED_BUILTIN, HIGH) ;   // turn the LED on (HIGH is the voltage level)
+  pinMode(trigPin,OUTPUT) ;
+  pinMode(echoPin,OUTPUT) ;
+  digitalWrite(LED_BUILTIN, LOW) ;   // turn the LED off
 
   
   Serial.begin(115200) ;
