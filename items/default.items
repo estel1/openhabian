@@ -1,13 +1,3 @@
-Group    Home             "Our Home"       <house>
-
-Group    Corridor         "Corridor"       <corridor>      (Home)
-
-Switch   Corridor_Light   "Light"          <light>         (Corridor, gLight)      {channel=""}
-Switch   Corridor_Power   "Power Outlet"   <poweroutlet>   (Corridor, gPower)      {channel=""}
-
-Group:Switch:OR(ON, OFF)   gLight   "Light"          <light>         (Home)
-Group:Switch:OR(ON, OFF)   gPower   "Power Outlet"   <poweroutlet>   (Home)
-
 Switch gpio_pin2_pwr_corridor "Normally Closed Relay" { gpio="pin:2 activelow:yes initialValue:high" }
 Switch gpio_pin3_pwr_big      "Normally Closed Relay" { gpio="pin:3 activelow:yes initialValue:high" }
 Switch gpio_pin4_pwr_kitchen  "Normally Closed Relay" { gpio="pin:4 activelow:yes initialValue:high" }
@@ -16,6 +6,6 @@ Switch gpio_pin6_pwr_2ndfloor "Normally Closed Relay" { gpio="pin:6 activelow:ye
 
 Switch gpio_pin7_light_corridor "Normally Closed Relay" { gpio="pin:7 activelow:yes initialValue:high" }
 Switch gpio_pin8_light_terrace  "Normally Closed Relay" { gpio="pin:8 activelow:yes initialValue:high" }
-Switch mqtt_pump "Pump" { mqtt=">[local:pump:command:ON:1],>[local:pump:command:OFF:0]" }
+Switch mqtt_pump "Pump" { mqtt=">[local:pump:command:ON:1],>[local:pump:command:OFF:0],<[local:pump:state:OFF:0],<[local:pump:state:ON:1]" }
 Number mqtt_temperature "Температура [%.1f]" {mqtt="<[local:esp32/temperature:state:default]"}
 Number mqtt_humidity "Влажность [%.1f]"   {mqtt="<[local:esp32/humidity:state:default]"}

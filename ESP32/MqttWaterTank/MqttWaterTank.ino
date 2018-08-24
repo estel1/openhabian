@@ -53,7 +53,7 @@ void setup()
 {
   pinMode(LED_BUILTIN, OUTPUT) ;
   pinMode(trigPin,OUTPUT) ;
-  pinMode(echoPin,OUTPUT) ;
+  pinMode(echoPin,INPUT) ;
   digitalWrite(LED_BUILTIN, LOW) ;   // turn the LED off
   
   Serial.begin(115200) ;
@@ -65,7 +65,7 @@ void setup()
   
   setup_wifi() ;
   client.setServer(mqtt_server, 1883) ;
-  client.setCallback(callback) ;
+  //client.setCallback(callback) ;
 
   if (MDNS.begin("watertank")) 
   {
@@ -166,8 +166,10 @@ void loop()
     Serial.print(distance) ;
     Serial.println("cm") ;
     int water_level = 100.0*(tank_height-distance)/tank_height ;
-    char levelString[8] ;
-    dtostrf(water_level, 1, 2, levelString) ;
+    String message = "" ;
+    message += water_level ;
+    message += "%" ;
+    client.publish("watertank/level", message.c_str() ) ;
     
     temperature = dht.readTemperature() ;
     char tempString[8];
@@ -206,10 +208,10 @@ void handleRoot()
   message += restartCount ;
   message += "\n" ;
   message += "pump_ctl:" ;
-  message += pump_ctl_state ;
+  //message += pump_ctl_state ;
   message += "\n" ;
   message += "pump_ctl_time:" ;
-  message += (now-pumpStarted)*1000 ;
+  //message += (now-pumpStarted)*1000 ;
   message += "s\n" ;
   
   server.send(200, "text/plain", message );   // Send HTTP status 200 (Ok) and send some text to the browser/client
