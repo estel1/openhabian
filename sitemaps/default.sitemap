@@ -17,6 +17,13 @@ sitemap default label="Дом" {
         {
             Text item=mqtt_temperature icon="temperature"
             Text item=mqtt_humidity icon="humidity"
+            Text item=mqtt_water_level icon="water" valuecolor=[mqtt_water_level<60="red", mqtt_water_level>80="green"]
+            Text item=mqtt_empty_space icon="water" valuecolor=[mqtt_empty_space<7="red"]
+            Default item=mqtt_pump label="Колодец"
+            Chart item=mqtt_water_level refresh=60000 period=4h icon="water" legend=true
+            Chart item=mqtt_empty_space refresh=60000 period=4h icon="water" legend=true
+            Chart item=mqtt_temperature refresh=60000 period=4h legend=true
+            Chart item=mqtt_humidity refresh=60000 period=4h legend=true
         }
     }
 }

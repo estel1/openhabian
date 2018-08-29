@@ -1,0 +1,26 @@
+Strategies
+{
+//  Strategy name
+//  |              Seconds
+//  |              |    Minutes
+//  |              |    |   Hours
+//  |              |    |   |   Day of month
+//  |              |    |   |   |   Month
+//  |              |    |   |   |   |   Day of week
+//  |              |    |   |   |   |   |   Year
+    every5sec   : "0/5  *   *   *   *   ?"
+    every15sec  : "0/15 *   *   *   *   ?"
+    everyMinute : "0    *   *   *   *   ?"
+    every30min  : "0    30  *   *   *   ?"
+    everyHour   : "0    0   *   *   *   ?"
+    everyDay    : "0    0   0   *   *   ?"
+    default = everyChange
+}
+
+Items
+{
+    mqtt_water_level   : strategy = everyMinute, restoreOnStartup
+    mqtt_empty_space   : strategy = everyMinute, restoreOnStartup
+    mqtt_temperature   : strategy = everyMinute, restoreOnStartup
+    mqtt_humidity      : strategy = everyMinute, restoreOnStartup
+}

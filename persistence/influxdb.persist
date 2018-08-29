@@ -9,4 +9,5 @@ every5Minutes : "*/5 * * * *"
 Items {
 mqtt_temperature: strategy = everyMinute
 mqtt_humidity: strategy = everyMinute
+mqtt_water_level: strategy = everyMinute
 }

@@ -17,7 +17,7 @@ const char* ssid        = "Keenetic-0079" ;
 const char* password    = "yoHwLp6B" ;
 const char* mqtt_server = "192.168.1.54" ;
 const char* mqtt_client = "WaterTankClient" ;
-const int   tank_height = 120 ; // Tank height, cm
+const int   tank_height = 80 ; // Tank height, cm
 
 const int DHT_PIN         = T1 ;
 const int trigPin         = T8 ;
@@ -133,7 +133,7 @@ void reconnect()
 void loop() 
 {  
   timerWrite(timer, 0) ; //reset timer
-  
+
   if (!client.connected()) 
   {
     reconnect() ;
@@ -147,29 +147,48 @@ void loop()
     lastMsg = now ;
 
     // https://www.instructables.com/id/Distance-Measurement-Using-HC-SR04-Via-NodeMCU/
-    // Clears the trigPin
-    digitalWrite(trigPin, LOW) ;
-    delayMicroseconds(2) ;
 
-    // Sets the trigPin on HIGH state for 10 micro seconds
-    digitalWrite(trigPin, HIGH) ;
-    delayMicroseconds(10) ;
-    digitalWrite(trigPin, LOW) ;
+    float fdist = 0.0 ;
+    for (int i=0;i<5;i++)
+    {
+      // Clears the trigPin
+      digitalWrite(trigPin, LOW) ;
+      delayMicroseconds(2) ;
+  
+      // Sets the trigPin on HIGH state for 10 micro seconds
+      digitalWrite(trigPin, HIGH) ;
+      delayMicroseconds(10) ;
+      digitalWrite(trigPin, LOW) ;
+  
+      // Reads the echoPin, returns the sound wave travel time in microseconds
+      long duration = pulseIn(echoPin, HIGH) ;
+  
+      // Calculating the distance
+      fdist += duration*0.034/2 ;
 
-    // Reads the echoPin, returns the sound wave travel time in microseconds
-    long duration = pulseIn(echoPin, HIGH) ;
-
-    // Calculating the distance
-    int distance = duration*0.034/2 ;
+      delay(100) ;
+      
+    }
+    int distance = fdist/5.0 ;
+    
     // Prints the distance on the Serial Monitor
     Serial.print("Distance is: ") ;
     Serial.print(distance) ;
     Serial.println("cm") ;
     int water_level = 100.0*(tank_height-distance)/tank_height ;
+    if (water_level<0)
+    {
+      water_level = 0 ;
+    }
     String message = "" ;
     message += water_level ;
-    message += "%" ;
     client.publish("watertank/level", message.c_str() ) ;
+    Serial.print("Water level is: ") ;    
+    Serial.println(message.c_str()) ;
+    message = "" ;
+    message += distance ;
+    client.publish("watertank/empty_space", message.c_str() ) ;
+
     
     temperature = dht.readTemperature() ;
     char tempString[8];

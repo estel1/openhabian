@@ -9,3 +9,5 @@ Switch gpio_pin8_light_terrace  "Normally Closed Relay" { gpio="pin:8 activelow:
 Switch mqtt_pump "Pump" { mqtt=">[local:pump:command:ON:1],>[local:pump:command:OFF:0],<[local:pump:state:OFF:0],<[local:pump:state:ON:1]" }
 Number mqtt_temperature "Температура [%.1f]" {mqtt="<[local:esp32/temperature:state:default]"}
 Number mqtt_humidity "Влажность [%.1f]"   {mqtt="<[local:esp32/humidity:state:default]"}
+Number mqtt_water_level "Уровень воды,% [%d]" {mqtt="<[local:watertank/level:state:default]"}
+Number mqtt_empty_space "До крышки,см [%d]" {mqtt="<[local:watertank/empty_space:state:default]"}
