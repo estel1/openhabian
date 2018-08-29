@@ -17,3 +17,7 @@ $ git clone https://github.com/estel1/openhabian
 [Relay Isolation](https://arduino-info.wikispaces.com/RelayIsolation)
 
 [4 ways to eliminate ESP8266 resets](https://internetofhomethings.com/homethings/?p=396)
+
+## Разное
+Clored values in sitemap:
+Text item=soil_moisture valuecolor=[soil_moisture>120="orange", soil_moisture>300="red"]
