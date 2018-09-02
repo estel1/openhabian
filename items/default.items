@@ -1,4 +1,6 @@
-Switch gpio_pin2_pwr_corridor "Normally Closed Relay" { gpio="pin:2 activelow:yes initialValue:high" }
+Group groupTemperatures
+
+Switch gpio_pin2_pwr_corridor "Normally Closed Relay" { gpio="pin:2 activelow:yes initialValue:high" } 
 Switch gpio_pin3_pwr_big      "Normally Closed Relay" { gpio="pin:3 activelow:yes initialValue:high" }
 Switch gpio_pin4_pwr_kitchen  "Normally Closed Relay" { gpio="pin:4 activelow:yes initialValue:high" }
 Switch gpio_pin5_pwr_boiler   "Normally Closed Relay" { gpio="pin:5 activelow:yes initialValue:high" }
@@ -7,7 +9,10 @@ Switch gpio_pin6_pwr_2ndfloor "Normally Closed Relay" { gpio="pin:6 activelow:ye
 Switch gpio_pin7_light_corridor "Normally Closed Relay" { gpio="pin:7 activelow:yes initialValue:high" }
 Switch gpio_pin8_light_terrace  "Normally Closed Relay" { gpio="pin:8 activelow:yes initialValue:high" }
 Switch mqtt_pump "Pump" { mqtt=">[local:pump:command:ON:1],>[local:pump:command:OFF:0],<[local:pump:state:OFF:0],<[local:pump:state:ON:1]" }
-Number mqtt_temperature "Температура [%.1f]" {mqtt="<[local:esp32/temperature:state:default]"}
+Switch mqtt_ext_light "ext_light" { mqtt=">[local:ext_light:command:ON:1],>[local:ext_light:command:OFF:0],<[local:ext_light:state:OFF:0],<[local:ext_light:state:ON:1]" }
 Number mqtt_humidity "Влажность [%.1f]"   {mqtt="<[local:esp32/humidity:state:default]"}
 Number mqtt_water_level "Уровень воды,% [%d]" {mqtt="<[local:watertank/level:state:default]"}
 Number mqtt_empty_space "До крышки,см [%d]" {mqtt="<[local:watertank/empty_space:state:default]"}
+
+Number mqtt_temperature "Температура (столб) [%.1f]" (groupTemperatures) {mqtt="<[local:esp32/temperature:state:default]"} 
+Number mqtt_watertank_temp "Температура (бочка) [%.1f]" (groupTemperatures) {mqtt="<[local:watertank/temperature:state:default]"} 

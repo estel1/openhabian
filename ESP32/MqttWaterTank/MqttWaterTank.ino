@@ -170,6 +170,7 @@ void loop()
       
     }
     int distance = fdist/5.0 ;
+    distance -= 3 ; //remove 
     
     // Prints the distance on the Serial Monitor
     Serial.print("Distance is: ") ;

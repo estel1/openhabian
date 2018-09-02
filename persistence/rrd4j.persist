@@ -21,6 +21,7 @@ Items
 {
     mqtt_water_level   : strategy = everyMinute, restoreOnStartup
     mqtt_empty_space   : strategy = everyMinute, restoreOnStartup
-    mqtt_temperature   : strategy = everyMinute, restoreOnStartup
+    mqtt_temperature   : strategy = every15sec, restoreOnStartup
+    mqtt_watertank_temp: strategy = every15sec, restoreOnStartup
     mqtt_humidity      : strategy = everyMinute, restoreOnStartup
 }
