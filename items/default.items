@@ -16,3 +16,7 @@ Number mqtt_empty_space "До крышки,см [%d]" {mqtt="<[local:watertank/e
 
 Number mqtt_temperature "Температура (столб) [%.1f]" (groupTemperatures) {mqtt="<[local:esp32/temperature:state:default]"} 
 Number mqtt_watertank_temp "Температура (бочка) [%.1f]" (groupTemperatures) {mqtt="<[local:watertank/temperature:state:default]"} 
+
+Number mqtt_watertank_pressure "Давление,мм [%.1f]" {mqtt="<[local:watertank/pressure:state:default]"} 
+Number mqtt_watertank_bmp_temp "Температура (BME) [%.1f]" {mqtt="<[local:watertank/bmp_temp:state:default]"} 
+Number mqtt_watertank_altitude "Высота над у.м. [%.1f]" {mqtt="<[local:watertank/altitude:state:default]"} 

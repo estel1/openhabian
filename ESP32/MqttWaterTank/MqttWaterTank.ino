@@ -1,9 +1,13 @@
+#include <pins_arduino.h>
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <DHT.h>
 #include <ESPmDNS.h>
 #include <WebServer.h>   // Include the WebServer library
 #include <esp_system.h>
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BMP280.h>
 
 // this code is based on example:
 // https://www.instructables.com/id/Distance-Measurement-Using-HC-SR04-Via-NodeMCU/
@@ -11,6 +15,7 @@
 // other resources:
 // http://esp32.net/images/Ai-Thinker/NodeMCU-32S/Ai-Thinker_NodeMCU-32S_DiagramSchematic.png
 // http://esp32.net/images/Ai-Thinker/NodeMCU-32S/Ai-Thinker_NodeMCU-32S_DiagramPinout.png
+// https://einstronic.com/wp-content/uploads/2017/06/NodeMCU-32S-Catalogue.pdf
 
 // Replace the next variables with your SSID/Password combination
 const char* ssid        = "Keenetic-0079" ;
@@ -19,13 +24,15 @@ const char* mqtt_server = "192.168.1.54" ;
 const char* mqtt_client = "WaterTankClient" ;
 const int   tank_height = 80 ; // Tank height, cm
 
+// pins_arduino.h
 const int DHT_PIN         = T1 ;
 const int trigPin         = T8 ;
-const int echoPin         = T9 ;  
+const int echoPin         = T9 ;
 
 WiFiClient espClient ;
 PubSubClient client(espClient) ;
 DHT dht(DHT_PIN,DHT11) ;
+Adafruit_BMP280 bme ; // I2C
 WebServer server(80) ;
 
 unsigned long lastMsg = 0 ;
@@ -40,7 +47,8 @@ void handleNotFound() ;
 
 int restartCount = 0 ;
 const int wdtTimeout = 15000 ;  //time in ms to trigger the watchdog
-hw_timer_t *timer = NULL;
+hw_timer_t *timer = NULL ;
+int bmeInitialized = 0 ;
 
 void IRAM_ATTR resetModule() 
 {
@@ -57,7 +65,7 @@ void setup()
   digitalWrite(LED_BUILTIN, LOW) ;   // turn the LED off
   
   Serial.begin(115200) ;
-  
+
   timer = timerBegin(0, 80, true) ;                  //timer 0, div 80
   timerAttachInterrupt(timer, &resetModule, true) ;  //attach callback
   timerAlarmWrite(timer, wdtTimeout * 1000, false) ; //set time in us
@@ -82,6 +90,17 @@ void setup()
   Serial.println("HTTP server started") ;
   
   dht.begin() ;
+
+  if (bme.begin())
+  {
+    bmeInitialized = 1 ;
+  } 
+  else
+  {
+      Serial.println("Could not find a valid BME280 sensor, check wiring!") ;
+      //while (1) ;
+  }
+  
 }
 
 void setup_wifi() 
@@ -206,6 +225,29 @@ void loop()
     Serial.print("Humidity: ");
     Serial.println(humString);
     client.publish("watertank/humidity", humString);
+
+    if (bmeInitialized)
+    {
+      float bmeTemp = bme.readTemperature() ; 
+      float bmePress = bme.readPressure() ;
+      float bmeAlt = bme.readAltitude(1013.25) ;
+  
+      String strTemp (bmeTemp,1) ;
+      Serial.print("BME Temp: ") ;
+      Serial.println(strTemp.c_str()) ;
+      client.publish("watertank/bme_temp", strTemp.c_str() ) ;
+  
+      String strPressure (bmePress/133.322,0) ;
+      Serial.print("Pressure: ");
+      Serial.println(strPressure.c_str());
+      client.publish("watertank/pressure", strPressure.c_str() ) ;
+  
+      String strAlt ( bmeAlt,2 ) ;
+      Serial.print("Altitude: ") ;
+      Serial.println( strAlt.c_str() ) ;
+      client.publish("watertank/altitude", strAlt.c_str() ) ;
+    }
+
   }
 }
 
