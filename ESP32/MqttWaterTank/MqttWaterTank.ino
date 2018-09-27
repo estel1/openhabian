@@ -1,3 +1,4 @@
+#include <Syslog.h>
 #include <pins_arduino.h>
 #include <WiFi.h>
 #include <PubSubClient.h>
@@ -36,6 +37,7 @@ Adafruit_BMP280 bme ; // I2C
 WebServer server(80) ;
 
 unsigned long lastMsg = 0 ;
+unsigned long lastMsgBme = 0 ;
 char msg[50] ;
 int value = 0 ;
 
@@ -56,6 +58,9 @@ void IRAM_ATTR resetModule()
   restartCount++ ;
   esp_restart_noos() ;
 }
+
+WiFiUDP udpClient ;
+Syslog syslog(udpClient, "192.168.1.54", 514, "watertank", "monitor", LOG_KERN) ;
 
 void setup() 
 {
@@ -123,6 +128,9 @@ void setup_wifi()
   Serial.println("WiFi connected") ;
   Serial.println("IP address: ") ;
   Serial.println(WiFi.localIP()) ;
+
+  syslog.logf( LOG_INFO, "Wifi connected.\n" ) ;
+  
 }
 
 void reconnect() 
@@ -200,16 +208,23 @@ void loop()
     {
       water_level = 0 ;
     }
+    else if (water_level>100)
+    {
+      water_level = 100 ;
+    }
+     
     String message = "" ;
     message += water_level ;
     client.publish("watertank/level", message.c_str() ) ;
     Serial.print("Water level is: ") ;    
     Serial.println(message.c_str()) ;
+
+    syslog.logf( LOG_INFO, "Water level is: %s\n", message.c_str() ) ;
+    
     message = "" ;
     message += distance ;
     client.publish("watertank/empty_space", message.c_str() ) ;
 
-    
     temperature = dht.readTemperature() ;
     char tempString[8];
     dtostrf(temperature, 1, 2, tempString);
@@ -226,29 +241,33 @@ void loop()
     Serial.println(humString);
     client.publish("watertank/humidity", humString);
 
-    if (bmeInitialized)
-    {
-      float bmeTemp = bme.readTemperature() ; 
-      float bmePress = bme.readPressure() ;
-      float bmeAlt = bme.readAltitude(1013.25) ;
-  
-      String strTemp (bmeTemp,1) ;
-      Serial.print("BME Temp: ") ;
-      Serial.println(strTemp.c_str()) ;
-      client.publish("watertank/bme_temp", strTemp.c_str() ) ;
-  
-      String strPressure (bmePress/133.322,0) ;
-      Serial.print("Pressure: ");
-      Serial.println(strPressure.c_str());
-      client.publish("watertank/pressure", strPressure.c_str() ) ;
-  
-      String strAlt ( bmeAlt,2 ) ;
-      Serial.print("Altitude: ") ;
-      Serial.println( strAlt.c_str() ) ;
-      client.publish("watertank/altitude", strAlt.c_str() ) ;
-    }
-
   }
+  if (bmeInitialized && (now - lastMsgBme)>10000 )
+  {
+    lastMsgBme = now ;
+
+    float bmeTemp = bme.readTemperature() ; 
+    float bmePress = bme.readPressure() ;
+    float bmeAlt = bme.readAltitude(1013.25) ;
+
+    String strTemp (bmeTemp,1) ;
+    Serial.print("BME Temp: ") ;
+    Serial.println(strTemp.c_str()) ;
+    client.publish("watertank/bme_temp", strTemp.c_str() ) ;
+
+    String strPressure (bmePress/133.322,1) ;
+    Serial.print("Pressure: ");
+    Serial.println(strPressure.c_str());
+    client.publish("watertank/pressure", strPressure.c_str() ) ;
+
+    syslog.logf( LOG_INFO, "BME pressure %s\n", strPressure.c_str() ) ;
+
+    String strAlt ( bmeAlt,1 ) ;
+    Serial.print("Altitude: ") ;
+    Serial.println( strAlt.c_str() ) ;
+    client.publish("watertank/altitude", strAlt.c_str() ) ;
+  }
+
 }
 
 void handleRoot() 
