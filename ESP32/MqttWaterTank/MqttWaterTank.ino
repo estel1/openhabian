@@ -297,7 +297,7 @@ void loop()
         client.publish(WATERTANK_BME_ALTITUDE, strAlt.c_str() ) ;
         
         String strHumidity ( bmeHumidity,1 ) ;
-        log_printf(LOG_INFO, "BME Humidity is: %s %\n", strHumidity.c_str() ) ;
+        log_printf(LOG_INFO, "WATERTANK_BME_HUMIDITY is: %s %\n", strHumidity.c_str() ) ;
         client.publish(WATERTANK_BME_HUMIDITY, strHumidity.c_str() ) ;
         
       }
