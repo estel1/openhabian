@@ -19,21 +19,22 @@
 // https://einstronic.com/wp-content/uploads/2017/06/NodeMCU-32S-Catalogue.pdf
 
 // Replace the next variables with your SSID/Password combination
-const char* ssid        = "Keenetic-0079" ;
-const char* password    = "yoHwLp6B" ;
-const char* mqtt_server = "192.168.1.54" ;
-const char* syslog_server = "192.168.1.54" ;
-const char* mqtt_client = "WaterTankClient" ;
-const int   tank_height = 80 ; // Tank height, cm
+const char* ssid                        = "Keenetic-0079" ;
+const char* password                    = "yoHwLp6B" ;
+const char* mqtt_server                 = "192.168.1.54" ;
+const char* syslog_server               = "192.168.1.54" ;
+const char* mqtt_client                 = "watertank" ;
+const int   tank_height                 = 80 ; // Tank height, cm
 
-const char* WATERTANK_WATER_LEVEL     = "watertank/level" ;
-const char* WATERTANK_EMPTY_SPACE     = "watertank/empty_space" ;
+// MQTT values
+const char* WATERTANK_WATER_LEVEL       = "watertank/level" ;
+const char* WATERTANK_EMPTY_SPACE       = "watertank/empty_space" ;
 const char* WATERTANK_DHT11_TEMPERATURE = "watertank/temperature" ;
-const char* WATERTANK_DHT11_HUMIDITY  = "watertank/humidity" ;
-const char* WATERTANK_BME_TEMPERATURE = "watertank/bme_temp" ;
-const char* WATERTANK_BME_PRESSURE = "watertank/pressure" ;
-const char* WATERTANK_BME_ALTITUDE  = "watertank/altitude" ;
-const char* WATERTANK_BME_HUMIDITY  = "watertank/bme_humidity" ;
+const char* WATERTANK_DHT11_HUMIDITY    = "watertank/humidity" ;
+const char* WATERTANK_BME_TEMPERATURE   = "watertank/bme_temp" ;
+const char* WATERTANK_BME_PRESSURE      = "watertank/pressure" ;
+const char* WATERTANK_BME_ALTITUDE      = "watertank/altitude" ;
+const char* WATERTANK_BME_HUMIDITY      = "watertank/bme_humidity" ;
 
 // pins_arduino.h
 const int DHT_PIN         = T1 ;
@@ -142,11 +143,11 @@ void setup()
   if (bme.begin())
   {
     bmeInitialized = 1 ;
+    log_printf(LOG_INFO, "BME initialized Ok!\n" ) ;
   } 
   else
   {
-      Serial.println("Could not find a valid BME280 sensor, check wiring!") ;
-      //while (1) ;
+    log_printf(LOG_ERR, "Could not find a valid BME/BMP280 sensor, check wiring!\n" ) ;
   }
   
 }
@@ -317,7 +318,7 @@ void loop()
       } 
       else
       {
-        log_printf(LOG_INFO, "BME initialization Failed.\n" ) ;
+        log_printf(LOG_ERR, "Could not find a valid BME280 sensor, check wiring!\n" ) ;
       }
     }
   }
