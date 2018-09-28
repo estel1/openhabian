@@ -68,10 +68,31 @@ bool log_printf(uint16_t pri, const char *fmt, ...)
   bool result ;
   
   va_start(args, fmt) ;
-  result = syslog.vlogf(pri, fmt, args) ;
-  va_end(args) ;
   
+  char *message = NULL ;
+  size_t initialLen = 0 ;
+  size_t len = 0 ;
+
+  initialLen = strlen(fmt) ;
+
+  message = new char[initialLen + 1] ;
+
+  len = vsnprintf( message, initialLen + 1, fmt, args) ;
+  if (len > initialLen) 
+  {
+    delete[] message ; message = NULL ;
+    message = new char[len + 1] ;
+
+    vsnprintf(message, len + 1, fmt, args) ;
+  }
+
+  Serial.print( message ) ;
+  result = syslog.log( pri, message ) ;
+  delete[] message ; message = NULL ;
+  
+  va_end(args) ;  
   return (result) ;
+  
 }
 
 void setup() 
