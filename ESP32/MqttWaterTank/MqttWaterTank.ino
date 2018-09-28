@@ -25,6 +25,9 @@ const char* mqtt_server = "192.168.1.54" ;
 const char* mqtt_client = "WaterTankClient" ;
 const int   tank_height = 80 ; // Tank height, cm
 
+const char* WATERTANK_WATER_LEVEL     = "watertank/level" ;
+const char* WATERTANK_EMPTY_SPACE     = "watertank/empty_space" ;
+
 // pins_arduino.h
 const int DHT_PIN         = T1 ;
 const int trigPin         = T8 ;
@@ -240,11 +243,11 @@ void loop()
      
     String message ( water_level, 0 ) ;
     log_printf(LOG_INFO, "Water level is: %s cm\n", message.c_str() ) ;
-    client.publish("watertank/level", message.c_str() ) ;
+    client.publish(WATERTANK_WATER_LEVEL, message.c_str() ) ;
 
     message = "" ; message += distance ;
     log_printf(LOG_INFO, "Distance is: %s cm\n", message.c_str() ) ;
-    client.publish("watertank/empty_space", message.c_str() ) ;
+    client.publish(WATERTANK_EMPTY_SPACE, message.c_str() ) ;
     
     // DHT11 Sensor
 
@@ -262,8 +265,7 @@ void loop()
   
   if ( (now - lastMsgBme)>10000 )
   {
-    lastMsgBme = now ;
-    
+    lastMsgBme = now ;    
     if (bmeInitialized)
     {
       float bmeTemp = bme.readTemperature() ; 
@@ -273,35 +275,42 @@ void loop()
       
       if (bmeAlt<400) // check for valid measures
       {
-        String strTemp (bmeTemp,1) ;
-        Serial.print("BME Temp: ") ;
-        Serial.println(strTemp.c_str()) ;
+        String strTemp (bmeTemp,2) ;
+        log_printf(LOG_INFO, "BME Temperature is: %s C\n", tempMessage.c_str() ) ;
         client.publish("watertank/bme_temp", strTemp.c_str() ) ;
 
         String strPressure (bmePress/133.322,1) ;
-        Serial.print("Pressure: ");
-        Serial.println(strPressure.c_str());
+        log_printf(LOG_INFO, "BME Pressure is: %s mmHg\n", strPressure.c_str() ) ;
         client.publish("watertank/pressure", strPressure.c_str() ) ;
 
-        syslog.logf( LOG_INFO, "BME pressure %s\n", strPressure.c_str() ) ;
-
         String strAlt ( bmeAlt,1 ) ;
-        Serial.print("Altitude: ") ;
-        Serial.println( strAlt.c_str() ) ;
+        log_printf(LOG_INFO, "BME Altitude is: %s m\n", strAlt.c_str() ) ;
         client.publish("watertank/altitude", strAlt.c_str() ) ;
+        
+        String strHumidity ( bmeHumidity,1 ) ;
+        log_printf(LOG_INFO, "BME Humidity is: %s %\n", strHumidity.c_str() ) ;
+        client.publish("watertank/bme_humidity", strHumidity.c_str() ) ;
+        
       }
       else
       {
         // not valid measurements
-        bmeInitialized = false ;
+        log_printf(LOG_ERR, "***********\n* BME provides wrong measurement. Reboot...\n--*\n", tempMessage.c_str() ) ;
+        esp_restart_noos() ; 
       }
     }
     else
     {
+      log_printf(LOG_INFO, "Try to initialize BME...\n" ) ;
       if (bme.begin())
       {
         bmeInitialized = 1 ;
+        log_printf(LOG_INFO, "BME initialized Ok!\n" ) ;
       } 
+      else
+      {
+        log_printf(LOG_INFO, "BME initialization Failed.\n" ) ;
+      }
     }
   }
 
