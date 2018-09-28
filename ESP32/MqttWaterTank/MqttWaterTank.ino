@@ -145,9 +145,7 @@ void setup_wifi()
 {
   delay(10) ;
   // We start by connecting to a WiFi network
-  Serial.println() ;
-  Serial.print("Connecting to ") ;
-  Serial.println(ssid) ;
+  log_printf(LOG_INFO, "Connecting to %s", ssid ) ;
 
   WiFi.begin(ssid, password) ;
 
@@ -157,12 +155,7 @@ void setup_wifi()
     Serial.print(".") ;
   }
 
-  Serial.println("") ;
-  Serial.println("WiFi connected") ;
-  Serial.println("IP address: ") ;
-  Serial.println(WiFi.localIP()) ;
-
-  syslog.logf( LOG_INFO, "Wifi connected.\n" ) ;
+  log_printf( LOG_INFO, "Wifi connected. IP address: %s\n", WiFi.localIP() ) ;  
   
 }
 
@@ -172,7 +165,7 @@ void reconnect()
   while (!client.connected()) 
   {
     digitalWrite(LED_BUILTIN, LOW) ;   // turn the LED off
-    Serial.print("Attempting MQTT connection...");
+    Serial.print("Attempting MQTT connection...") ;
     // Attempt to connect
     if (client.connect(mqtt_client)) 
     {
@@ -181,9 +174,9 @@ void reconnect()
     } 
     else 
     {
-      Serial.print("failed, rc=");
+      Serial.print("failed, rc=") ;
       Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
+      Serial.println(" try again in 5 seconds") ;
       // Wait 5 seconds before retrying
       delay(5000);
     }
@@ -211,6 +204,7 @@ void loop()
     float fdist = 0.0 ;
     for (int i=0;i<5;i++)
     {
+      // Ultrasonic Sensor
       // Clears the trigPin
       digitalWrite(trigPin, LOW) ;
       delayMicroseconds(2) ;
@@ -233,9 +227,7 @@ void loop()
     distance -= 3 ; //remove 
     
     // Prints the distance on the Serial Monitor
-    Serial.print("Distance is: ") ;
-    Serial.print(distance) ;
-    Serial.println("cm") ;
+    log_printf(LOG_INFO, "Distance is: %d cm\n", distance ) ;
     int water_level = 100.0*(tank_height-distance)/tank_height ;
     if (water_level<0)
     {
@@ -246,59 +238,71 @@ void loop()
       water_level = 100 ;
     }
      
-    String message = "" ;
-    message += water_level ;
+    String message ( water_level, 0 ) ;
+    log_printf(LOG_INFO, "Water level is: %s cm\n", message.c_str() ) ;
     client.publish("watertank/level", message.c_str() ) ;
-    Serial.print("Water level is: ") ;    
-    Serial.println(message.c_str()) ;
 
-    syslog.logf( LOG_INFO, "Water level is: %s\n", message.c_str() ) ;
-    
-    message = "" ;
-    message += distance ;
+    message = "" ; message += distance ;
+    log_printf(LOG_INFO, "Distance is: %s cm\n", message.c_str() ) ;
     client.publish("watertank/empty_space", message.c_str() ) ;
+    
+    // DHT11 Sensor
 
     temperature = dht.readTemperature() ;
-    char tempString[8];
-    dtostrf(temperature, 1, 2, tempString);
-    Serial.print("Temperature: ");
-    Serial.println(tempString);
-    client.publish("watertank/temperature", tempString);
+    String tempMessage( temperature, 2 ) ;
+    log_printf(LOG_INFO, "DHT11 Temperature is: %s C\n", tempMessage.c_str() ) ;
+    client.publish("watertank/temperature", tempMessage.c_str() ) ;
 
     humidity = dht.readHumidity() ;
-    
-    // Convert the value to a char array
-    char humString[8];
-    dtostrf(humidity, 1, 2, humString);
-    Serial.print("Humidity: ");
-    Serial.println(humString);
-    client.publish("watertank/humidity", humString);
+    String humidityMessage( humidity, 2 ) ;
+    log_printf(LOG_INFO, "DHT11 Humidity is: %s %\n", humidityMessage.c_str() ) ;    
+    client.publish("watertank/humidity", humidityMessage.c_str() ) ;
 
   }
-  if (bmeInitialized && (now - lastMsgBme)>10000 )
+  
+  if ( (now - lastMsgBme)>10000 )
   {
     lastMsgBme = now ;
+    
+    if (bmeInitialized)
+    {
+      float bmeTemp = bme.readTemperature() ; 
+      float bmePress = bme.readPressure() ;
+      float bmeAlt = bme.readAltitude(1013.25) ;
+      float bmeHumidity = bme.readHumidity() ;
+      
+      if (bmeAlt<400) // check for valid measures
+      {
+        String strTemp (bmeTemp,1) ;
+        Serial.print("BME Temp: ") ;
+        Serial.println(strTemp.c_str()) ;
+        client.publish("watertank/bme_temp", strTemp.c_str() ) ;
 
-    float bmeTemp = bme.readTemperature() ; 
-    float bmePress = bme.readPressure() ;
-    float bmeAlt = bme.readAltitude(1013.25) ;
+        String strPressure (bmePress/133.322,1) ;
+        Serial.print("Pressure: ");
+        Serial.println(strPressure.c_str());
+        client.publish("watertank/pressure", strPressure.c_str() ) ;
 
-    String strTemp (bmeTemp,1) ;
-    Serial.print("BME Temp: ") ;
-    Serial.println(strTemp.c_str()) ;
-    client.publish("watertank/bme_temp", strTemp.c_str() ) ;
+        syslog.logf( LOG_INFO, "BME pressure %s\n", strPressure.c_str() ) ;
 
-    String strPressure (bmePress/133.322,1) ;
-    Serial.print("Pressure: ");
-    Serial.println(strPressure.c_str());
-    client.publish("watertank/pressure", strPressure.c_str() ) ;
-
-    syslog.logf( LOG_INFO, "BME pressure %s\n", strPressure.c_str() ) ;
-
-    String strAlt ( bmeAlt,1 ) ;
-    Serial.print("Altitude: ") ;
-    Serial.println( strAlt.c_str() ) ;
-    client.publish("watertank/altitude", strAlt.c_str() ) ;
+        String strAlt ( bmeAlt,1 ) ;
+        Serial.print("Altitude: ") ;
+        Serial.println( strAlt.c_str() ) ;
+        client.publish("watertank/altitude", strAlt.c_str() ) ;
+      }
+      else
+      {
+        // not valid measurements
+        bmeInitialized = false ;
+      }
+    }
+    else
+    {
+      if (bme.begin())
+      {
+        bmeInitialized = 1 ;
+      } 
+    }
   }
 
 }
