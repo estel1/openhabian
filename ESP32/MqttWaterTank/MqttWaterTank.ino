@@ -22,11 +22,18 @@
 const char* ssid        = "Keenetic-0079" ;
 const char* password    = "yoHwLp6B" ;
 const char* mqtt_server = "192.168.1.54" ;
+const char* syslog_server = "192.168.1.54" ;
 const char* mqtt_client = "WaterTankClient" ;
 const int   tank_height = 80 ; // Tank height, cm
 
 const char* WATERTANK_WATER_LEVEL     = "watertank/level" ;
 const char* WATERTANK_EMPTY_SPACE     = "watertank/empty_space" ;
+const char* WATERTANK_DHT11_TEMPERATURE = "watertank/temperature" ;
+const char* WATERTANK_DHT11_HUMIDITY  = "watertank/humidity" ;
+const char* WATERTANK_BME_TEMPERATURE = "watertank/bme_temp" ;
+const char* WATERTANK_BME_PRESSURE = "watertank/pressure" ;
+const char* WATERTANK_BME_ALTITUDE  = "watertank/altitude" ;
+const char* WATERTANK_BME_HUMIDITY  = "watertank/bme_humidity" ;
 
 // pins_arduino.h
 const int DHT_PIN         = T1 ;
@@ -63,7 +70,7 @@ void IRAM_ATTR resetModule()
 }
 
 WiFiUDP udpClient ;
-Syslog syslog(udpClient, "192.168.1.54", 514, "watertank", "monitor", LOG_KERN) ;
+Syslog syslog(udpClient, syslog_server, 514, "watertank", "monitor", LOG_KERN) ;
 
 bool log_printf(uint16_t pri, const char *fmt, ...) 
 {
@@ -254,12 +261,12 @@ void loop()
     temperature = dht.readTemperature() ;
     String tempMessage( temperature, 2 ) ;
     log_printf(LOG_INFO, "DHT11 Temperature is: %s C\n", tempMessage.c_str() ) ;
-    client.publish("watertank/temperature", tempMessage.c_str() ) ;
+    client.publish(WATERTANK_DHT11_TEMPERATURE, tempMessage.c_str() ) ;
 
     humidity = dht.readHumidity() ;
     String humidityMessage( humidity, 2 ) ;
     log_printf(LOG_INFO, "DHT11 Humidity is: %s %\n", humidityMessage.c_str() ) ;    
-    client.publish("watertank/humidity", humidityMessage.c_str() ) ;
+    client.publish(WATERTANK_DHT11_HUMIDITY "watertank/humidity", humidityMessage.c_str() ) ;
 
   }
   
@@ -275,27 +282,28 @@ void loop()
       
       if (bmeAlt<400) // check for valid measures
       {
+        
         String strTemp (bmeTemp,2) ;
-        log_printf(LOG_INFO, "BME Temperature is: %s C\n", tempMessage.c_str() ) ;
-        client.publish("watertank/bme_temp", strTemp.c_str() ) ;
+        log_printf(LOG_INFO, "WATERTANK_BME_TEMPERATURE is: %s C\n", tempMessage.c_str() ) ;
+        client.publish(WATERTANK_BME_TEMPERATURE, strTemp.c_str() ) ;
 
         String strPressure (bmePress/133.322,1) ;
-        log_printf(LOG_INFO, "BME Pressure is: %s mmHg\n", strPressure.c_str() ) ;
-        client.publish("watertank/pressure", strPressure.c_str() ) ;
+        log_printf(LOG_INFO, "WATERTANK_BME_PRESSURE is: %s mmHg\n", strPressure.c_str() ) ;
+        client.publish(WATERTANK_BME_PRESSURE, strPressure.c_str() ) ;
 
-        String strAlt ( bmeAlt,1 ) ;
-        log_printf(LOG_INFO, "BME Altitude is: %s m\n", strAlt.c_str() ) ;
-        client.publish("watertank/altitude", strAlt.c_str() ) ;
+        String strAlt ( bmeAlt,2 ) ;
+        log_printf(LOG_INFO, "WATERTANK_BME_ALTITUDE is: %s m\n", strAlt.c_str() ) ;
+        client.publish(WATERTANK_BME_ALTITUDE, strAlt.c_str() ) ;
         
         String strHumidity ( bmeHumidity,1 ) ;
         log_printf(LOG_INFO, "BME Humidity is: %s %\n", strHumidity.c_str() ) ;
-        client.publish("watertank/bme_humidity", strHumidity.c_str() ) ;
+        client.publish(WATERTANK_BME_HUMIDITY, strHumidity.c_str() ) ;
         
       }
       else
       {
         // not valid measurements
-        log_printf(LOG_ERR, "***********\n* BME provides wrong measurement. Reboot...\n--*\n", tempMessage.c_str() ) ;
+        log_printf(LOG_ERR, "***********\n* BME provides wrong measurement. Reboot monitor...\n--*\n", tempMessage.c_str() ) ;
         esp_restart_noos() ; 
       }
     }
