@@ -62,6 +62,18 @@ void IRAM_ATTR resetModule()
 WiFiUDP udpClient ;
 Syslog syslog(udpClient, "192.168.1.54", 514, "watertank", "monitor", LOG_KERN) ;
 
+bool log_printf(uint16_t pri, const char *fmt, ...) 
+{
+  va_list args ;
+  bool result ;
+  
+  va_start(args, fmt) ;
+  result = syslog.vlogf(pri, fmt, args) ;
+  va_end(args) ;
+  
+  return (result) ;
+}
+
 void setup() 
 {
   pinMode(LED_BUILTIN, OUTPUT) ;
