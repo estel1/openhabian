@@ -121,6 +121,7 @@ void setup()
   timerAlarmEnable(timer) ;                          //enable interrupt
   
   setup_wifi() ;
+  log_printf(LOG_INFO, "WiFi started!\n" ) ;
   client.setServer(mqtt_server, 1883) ;
   //client.setCallback(callback) ;
 
@@ -166,7 +167,7 @@ void setup_wifi()
     Serial.print(".") ;
   }
 
-  log_printf( LOG_INFO, "Wifi connected. IP address: %s\n", WiFi.localIP() ) ;  
+  log_printf( LOG_INFO, "Wifi connected. IP address: %s\n", WiFi.localIP().toString().c_str(  ) ) ;  
   
 }
 
@@ -249,7 +250,7 @@ void loop()
       water_level = 100 ;
     }
      
-    String message ( water_level, 0 ) ;
+    String message ( (float)water_level, 0 ) ;
     log_printf(LOG_INFO, "Water level is: %s cm\n", message.c_str() ) ;
     client.publish(WATERTANK_WATER_LEVEL, message.c_str() ) ;
 
@@ -266,8 +267,8 @@ void loop()
 
     humidity = dht.readHumidity() ;
     String humidityMessage( humidity, 2 ) ;
-    log_printf(LOG_INFO, "DHT11 Humidity is: %s %\n", humidityMessage.c_str() ) ;    
-    client.publish(WATERTANK_DHT11_HUMIDITY "watertank/humidity", humidityMessage.c_str() ) ;
+    log_printf(LOG_INFO, "DHT11 Humidity is: %s %%\n", humidityMessage.c_str() ) ;    
+    client.publish(WATERTANK_DHT11_HUMIDITY, humidityMessage.c_str() ) ;
 
   }
   
@@ -279,13 +280,13 @@ void loop()
       float bmeTemp = bme.readTemperature() ; 
       float bmePress = bme.readPressure() ;
       float bmeAlt = bme.readAltitude(1013.25) ;
-      float bmeHumidity = bme.readHumidity() ;
+      //float bmeHumidity = bme.readHumidity() ;
       
       if (bmeAlt<400) // check for valid measures
       {
         
         String strTemp (bmeTemp,2) ;
-        log_printf(LOG_INFO, "WATERTANK_BME_TEMPERATURE is: %s C\n", tempMessage.c_str() ) ;
+        log_printf(LOG_INFO, "WATERTANK_BME_TEMPERATURE is: %s C\n", strTemp.c_str() ) ;
         client.publish(WATERTANK_BME_TEMPERATURE, strTemp.c_str() ) ;
 
         String strPressure (bmePress/133.322,1) ;
@@ -296,15 +297,15 @@ void loop()
         log_printf(LOG_INFO, "WATERTANK_BME_ALTITUDE is: %s m\n", strAlt.c_str() ) ;
         client.publish(WATERTANK_BME_ALTITUDE, strAlt.c_str() ) ;
         
-        String strHumidity ( bmeHumidity,1 ) ;
-        log_printf(LOG_INFO, "WATERTANK_BME_HUMIDITY is: %s %\n", strHumidity.c_str() ) ;
-        client.publish(WATERTANK_BME_HUMIDITY, strHumidity.c_str() ) ;
+        //String strHumidity ( bmeHumidity,1 ) ;
+        //log_printf(LOG_INFO, "WATERTANK_BME_HUMIDITY is: %s %%\n", strHumidity.c_str() ) ;
+        //client.publish(WATERTANK_BME_HUMIDITY, strHumidity.c_str() ) ;
         
       }
       else
       {
         // not valid measurements
-        log_printf(LOG_ERR, "***********\n* BME provides wrong measurement. Reboot monitor...\n--*\n", tempMessage.c_str() ) ;
+        log_printf(LOG_ERR, "***********\n* BME provides wrong measurement. Reboot monitor...\n--*\n" ) ;
         esp_restart_noos() ; 
       }
     }
