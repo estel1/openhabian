@@ -4,6 +4,7 @@
 #include <ESPmDNS.h>
 #include <WebServer.h>   // Include the WebServer library
 #include <esp_system.h>
+#include <Syslog.h>
 
 // https://einstronic.com/wp-content/uploads/2017/06/NodeMCU-32S-Catalogue.pdf
 
@@ -12,6 +13,9 @@ const char* ssid        = "Keenetic-0079" ;
 const char* password    = "yoHwLp6B" ;
 const char* mqtt_server = "192.168.1.54" ;
 const char* mqtt_client = "PumpClient" ;
+
+const char* PUMPSTATION_DHT11_TEMPERATURE  = "esp32/temperature" ;
+const char* PUMPSTATION_DHT11_HUMIDITY     = "esp32/humidity" ;
 
 const int RELAY_PUMP_PIN  = T0 ;
 const int DHT_PIN         = T1 ;
@@ -45,6 +49,42 @@ void IRAM_ATTR resetModule()
   ets_printf("reboot\n") ;
   restartCount++ ;
   esp_restart_noos() ;
+}
+
+WiFiUDP udpClient ;
+Syslog syslog(udpClient, syslog_server, 514, "pumpstation", "station", LOG_KERN) ;
+
+bool log_printf(uint16_t pri, const char *fmt, ...) 
+{
+  va_list args ;
+  bool result ;
+  
+  va_start(args, fmt) ;
+  
+  char *message = NULL ;
+  size_t initialLen = 0 ;
+  size_t len = 0 ;
+
+  initialLen = strlen(fmt) ;
+
+  message = new char[initialLen + 1] ;
+
+  len = vsnprintf( message, initialLen + 1, fmt, args) ;
+  if (len > initialLen) 
+  {
+    delete[] message ; message = NULL ;
+    message = new char[len + 1] ;
+
+    vsnprintf(message, len + 1, fmt, args) ;
+  }
+
+  Serial.print( message ) ;
+  result = syslog.log( pri, message ) ;
+  delete[] message ; message = NULL ;
+  
+  va_end(args) ;  
+  return (result) ;
+  
 }
 
 void setup() 
@@ -88,7 +128,8 @@ void setup()
 
 }
 
-void setup_wifi() {
+void setup_wifi() 
+{
   delay(10) ;
   // We start by connecting to a WiFi network
   Serial.println() ;
@@ -102,67 +143,35 @@ void setup_wifi() {
     Serial.print(".") ;
   }
 
-  Serial.println("") ;
-  Serial.println("WiFi connected") ;
-  Serial.println("IP address: ") ;
-  Serial.println(WiFi.localIP()) ;
+  log_printf( LOG_INFO, "Wifi connected. IP address: %s\n", WiFi.localIP().toString().c_str(  ) ) ;  
 }
 
 void callback(char* topic, byte* message, unsigned int length) 
 {
-  Serial.print("Message arrived on topic: ");
-  Serial.print(topic);
-  Serial.print(". Message: ");
+  log_printf( LOG_INFO, "Message arrived on topic: %s. ", topic ) ;  
   
   if (length>0)
   {
     if (message[0]=='0')
     {
-      //digitalWrite(LED_BUILTIN, HIGH) ;   // turn the LED on (HIGH is the voltage level)
       digitalWrite(RELAY_PUMP_PIN, HIGH) ;   // turn the LED on (HIGH is the voltage level)
-      Serial.println("Off") ;
+      log_printf( LOG_INFO, "Off.\n" ) ;  
     }
     else
     {
-      //digitalWrite(LED_BUILTIN, LOW) ;   // turn the LED on (HIGH is the voltage level)
       digitalWrite(RELAY_PUMP_PIN, LOW) ;   // turn the LED on (HIGH is the voltage level)
-      Serial.println("On") ;
+      log_printf( LOG_INFO, "On.\n" ) ;  
     }
   }
-
-  /*
-  for (int i = 0; i < length; i++) {
-    Serial.print((char)message[i]);
-    messageTemp += (char)message[i];
-  }
-  Serial.println();
-
-  // Feel free to add more if statements to control more GPIOs with MQTT
-
-  // If a message is received on the topic esp32/output, you check if the message is either "on" or "off". 
-  // Changes the output state according to the message
-  if (String(topic) == "pump") {
-    Serial.print("Changing output to ");
-    if(messageTemp == "on"){
-      Serial.println("on");
-      digitalWrite(LED_BUILTIN, HIGH) ;   // turn the LED on (HIGH is the voltage level)
-      //digitalWrite(T0, HIGH) ;   // turn the LED on (HIGH is the voltage level)
-    }
-    else if(messageTemp == "off"){
-      Serial.println("off");
-      digitalWrite(LED_BUILTIN, LOW) ;   // turn the LED on (HIGH is the voltage level)
-      //digitalWrite(T0, LOW) ;   // turn the LED on (HIGH is the voltage level)
-    }
-  }
-  */
 }
 
-void reconnect() {
+void reconnect() 
+{
   // Loop until we're reconnected
   while (!client.connected()) 
   {
     digitalWrite(LED_BUILTIN, LOW) ;   // turn the LED on (HIGH is the voltage level)
-    Serial.print("Attempting MQTT connection...");
+    Serial.print("Attempting MQTT connection...") ;
     // Attempt to connect
     if (client.connect(mqtt_client)) {
       Serial.println("connected") ;
@@ -172,18 +181,20 @@ void reconnect() {
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
+      Serial.println(" try again in 5 seconds") ;
       // Wait 5 seconds before retrying
       delay(5000);
     }
   }
 }
 
-void loop() {
+void loop() 
+{
   
   timerWrite(timer, 0) ; //reset timer (feed watchdog)
   
-  if (!client.connected()) {
+  if (!client.connected()) 
+  {
     reconnect() ;
   }
 
@@ -194,7 +205,7 @@ void loop() {
   if (btnOn==LOW && btnOff==HIGH)
   { 
     // both btn pressed - do nothing   
-    Serial.println("Disabled button combination") ;
+    log_printf( LOG_INFO, "Disabled button combination.\n" ) ;  
   }
   else if (btnOn==LOW)
   {
@@ -202,8 +213,7 @@ void loop() {
     {
       pump_ctl_state  = 1 ;
       client.publish( "pump", "1" ) ;
-      //callback("pump", (byte*)"1", 1) ;
-      Serial.println("BTN_ON pressed") ;
+      log_printf( LOG_INFO, "BTN_ON pressed\n." ) ;  
       pumpStarted = millis() ;
     }  
   }
@@ -212,9 +222,8 @@ void loop() {
     if ( pump_ctl_state!=0 )
     {
       pump_ctl_state  = 0 ;
-      //callback("pump", (byte*)"0", 1) ;
       client.publish( "pump", "0" ) ;
-      Serial.println("BTN_OFF pressed") ;
+      log_printf( LOG_INFO, "BTN_OFF pressed\n." ) ;  
     }  
   }
 
@@ -230,34 +239,21 @@ void loop() {
   }
   */
 
-  if (now - lastMsg > 5000) {
-    lastMsg = now;
+  if (now - lastMsg > 5000) 
+  {
+    lastMsg = now ;
 
     temperature = dht.readTemperature() ;
-    //Serial.print("Temperature: ") ;
-    //Serial.println(temperature) ;
-    
-    // Temperature in Celsius
-    //temperature = bme.readTemperature();   
-    // Uncomment the next line to set temperature in Fahrenheit 
-    // (and comment the previous temperature line)
-    //temperature = 1.8 * bme.readTemperature() + 32; // Temperature in Fahrenheit
-    
-    // Convert the value to a char array
-    char tempString[8];
-    dtostrf(temperature, 1, 2, tempString);
-    Serial.print("Temperature: ");
-    Serial.println(tempString);
-    client.publish("esp32/temperature", tempString);
-
     humidity = dht.readHumidity() ;
     
     // Convert the value to a char array
-    char humString[8];
-    dtostrf(humidity, 1, 2, humString);
-    Serial.print("Humidity: ");
-    Serial.println(humString);
-    client.publish("esp32/humidity", humString);
+    String tempMessage( temperature, 2 ) ;
+    log_printf(LOG_INFO, "DHT11 Temperature is: %s C\n", tempMessage.c_str() ) ;
+    client.publish(PUMPSTATION_DHT11_TEMPERATURE, tempMessage.c_str() ) ;   
+   
+    String humidityMessage( humidity, 2 ) ;
+    log_printf(LOG_INFO, "DHT11 Humidity is: %s %%\n", humidityMessage.c_str() ) ;    
+    client.publish(PUMPSTATION_DHT11_HUMIDITY, humidityMessage.c_str() ) ;   
   }
 }
 
