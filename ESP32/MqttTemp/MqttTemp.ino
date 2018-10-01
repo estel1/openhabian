@@ -95,6 +95,10 @@ void setup()
   pinMode(BTN_ON_PIN,INPUT_PULLUP) ;
   pinMode(BTN_OFF_PIN,INPUT_PULLUP) ;
   digitalWrite(LED_BUILTIN, LOW) ;   // turn the LED on (HIGH is the voltage level)
+
+  // check this
+  digitalWrite(RELAY_PUMP_PIN, HIGH) ;   // turn the pump off
+
   
   Serial.begin(115200) ;
   Serial.print("LED_BUILTIN=" ) ;
