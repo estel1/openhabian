@@ -251,7 +251,7 @@ void loop()
     }
      
     String message ( (float)water_level, 0 ) ;
-    log_printf(LOG_INFO, "Water level is: %s cm\n", message.c_str() ) ;
+    log_printf(LOG_INFO, "Water level is: %s %%\n", message.c_str() ) ;
     client.publish(WATERTANK_WATER_LEVEL, message.c_str() ) ;
 
     message = "" ; message += distance ;

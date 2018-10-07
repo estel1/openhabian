@@ -12,6 +12,7 @@
 const char* ssid        = "Keenetic-0079" ;
 const char* password    = "yoHwLp6B" ;
 const char* mqtt_server = "192.168.1.54" ;
+const char* syslog_server = "192.168.1.54" ;
 const char* mqtt_client = "PumpClient" ;
 
 const char* PUMPSTATION_DHT11_TEMPERATURE  = "esp32/temperature" ;
