@@ -1,0 +1,19 @@
+[Unit]
+Description=Frontail openHAB instance, reachable at http://%H:9001
+Documentation=https://github.com/mthenw/frontail
+Documentation=https://github.com/openhab/openhabian/issues/28
+After=openhab2.service syslog.service mosquitto.service
+
+[Service]
+Type=simple
+ExecStart0=/usr/bin/frontail --ui-highlight --ui-highlight-preset /usr/lib/node_modules/frontail/preset/openhab.json -t openhab -l 2000 -n 200 /var/log/syslog /var/log/openhab2/openhab.log /var/log/openhab2/events.log
+ExecStart=/usr/bin/frontail /var/log/daemon.log /var/log/watertank.log /var/log/syslog /var/log/messages /var/log/openhab2/openhab.log /var/log/openhab2/events.log
+Restart=always
+User=openhabian
+Group=openhabian
+Environment=PATH=/usr/bin/
+Environment=NODE_ENV=production
+WorkingDirectory=/usr/bin/
+
+[Install]
+WantedBy=multi-user.target

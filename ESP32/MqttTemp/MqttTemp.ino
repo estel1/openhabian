@@ -22,6 +22,8 @@ const int RELAY_PUMP_PIN  = T0 ;
 const int DHT_PIN         = T1 ;
 const int BTN_ON_PIN      = T8 ;
 const int BTN_OFF_PIN     = T9 ;
+
+const int KEYB_PRESS_TIME = 250 ; // Time to detect btn pressed
  
 
 WiFiClient espClient ;
@@ -205,14 +207,42 @@ void loop()
 
   server.handleClient() ;                    // Listen for HTTP requests from clients
 
-  int btnOn = digitalRead( BTN_ON_PIN ) ;
-  int btnOff = digitalRead( BTN_OFF_PIN ) ;
-  if (btnOn==LOW && btnOff==HIGH)
+  // keyboard processing
+  int msPressed = 0 ;
+  bool btnOn    = false ;
+  bool btnOff   = false ;
+
+  while( digitalRead( BTN_ON_PIN )==LOW )
+  {    
+    msPressed += 10 ;
+    delay( 10 ) ;
+    if (msPressed>KEYB_PRESS_TIME)
+    {
+      break ;        
+    }
+  }
+  btnOn = msPressed>KEYB_PRESS_TIME ;
+
+  msPressed = 0 ;
+  while( digitalRead( BTN_OFF_PIN )==HIGH )
+  {    
+    msPressed += 10 ;
+    delay( 10 ) ;
+    if (msPressed>KEYB_PRESS_TIME)
+    {
+      break ;        
+    }
+  }
+  btnOff = msPressed>KEYB_PRESS_TIME ;
+
+  //log_printf( LOG_INFO,"BTNoN%d btnoff%d\n", btnOn, btnOff ) ;
+
+  if (btnOn && btnOff)
   { 
     // both btn pressed - do nothing   
     log_printf( LOG_INFO, "Disabled button combination.\n" ) ;  
   }
-  else if (btnOn==LOW)
+  else if (btnOn)
   {
     if ( pump_ctl_state!=1 )
     {
@@ -222,7 +252,7 @@ void loop()
       pumpStarted = millis() ;
     }  
   }
-  else if (btnOff==HIGH)
+  else if (btnOff)
   {
     if ( pump_ctl_state!=0 )
     {
