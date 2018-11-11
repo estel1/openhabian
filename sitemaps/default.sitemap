@@ -1,34 +1,35 @@
 sitemap default label="Дом" {
     Frame {
         Text label="Освещение" icon="light" {
-            Default item=gpio_pin7_light_corridor label="Коридор"
+            //Default item=gpio_pin7_light_corridor label="Коридор"
             Default item=gpio_pin8_light_terrace label="Терасса"
             Default item=mqtt_ext_light label="Улица (туалет)"
         }
 
         Text label="Розетки" icon="poweroutlet" {
-            Default item=gpio_pin2_pwr_corridor label="коридор"
-            Default item=gpio_pin3_pwr_big label="Большая комната"
+            //Default item=gpio_pin2_pwr_corridor label="коридор"
+            //Default item=gpio_pin3_pwr_big label="Большая комната"
+            Default item=gpio_pin6_pwr_2ndfloor label="Большая комната"
             Default item=gpio_pin4_pwr_kitchen label="Кухня"
             Default item=gpio_pin5_pwr_boiler label="Туалет, столб"
-            Default item=gpio_pin6_pwr_2ndfloor label="2й этаж"
+            //Default item=gpio_pin6_pwr_2ndfloor label="2й этаж"
             Default item=mqtt_pump label="Колодец"
         }
         Text label="Датчики" icon="humidity"
         {
-            Text item=mqtt_temperature icon="temperature"
+            //Text item=mqtt_temperature icon="temperature"
             Text item=mqtt_watertank_temp icon="temperature"
             Text item=mqtt_watertank_bmp_temp icon="temperature"
             Text item=mqtt_humidity icon="humidity"
             Text item=mqtt_watertank_pressure icon="pressure" valuecolor=[mqtt_watertank_pressure<745="blue", mqtt_watertank_pressure<=755="green", mqtt_watertank_pressure>755="red"]
             Text item=mqtt_watertank_altitude icon="flow"
-            Text item=mqtt_water_level icon="cistern" valuecolor=[mqtt_water_level<60="red", mqtt_water_level>80="green"]
-            Text item=mqtt_empty_space icon="battery" valuecolor=[mqtt_empty_space<7="red"]
-            Default item=mqtt_pump label="Колодец"
-            Chart item=mqtt_water_level refresh=20000 period=8h icon="water" legend=true
-            Chart item=mqtt_watertank_pressure refresh=60000 period=1d icon="pressure" legend=true
-            Chart item=groupTemperatures refresh=60000 period=8h legend=true
-            Chart item=mqtt_humidity refresh=60000 period=8h legend=true
+            //Text item=mqtt_water_level icon="cistern" valuecolor=[mqtt_water_level<60="red", mqtt_water_level>80="green"]
+            //Text item=mqtt_empty_space icon="battery" valuecolor=[mqtt_empty_space<7="red"]
+            //Default item=mqtt_pump label="Колодец"
+            //Chart item=mqtt_water_level refresh=20000 period=8h icon="water" legend=true
+            //Chart item=mqtt_watertank_pressure refresh=60000 period=1d icon="pressure" legend=true
+            //Chart item=groupTemperatures refresh=60000 period=8h legend=true
+            //Chart item=mqtt_humidity refresh=60000 period=8h legend=true
         }
     }
 }

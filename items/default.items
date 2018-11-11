@@ -2,8 +2,8 @@ Group groupTemperatures
 
 Switch gpio_pin2_pwr_corridor 	  "Redhead wire  Relay 1"  { gpio="pin:2 activelow:yes initialValue:high" } 
 Switch gpio_pin3_pwr_big      	  "Yellow wire   Relay 2"  { gpio="pin:3 activelow:yes initialValue:high" }
-Switch gpio_pin4_pwr_kitchen  	  "Green wire    Relay 3" { gpio="pin:4 activelow:yes initialValue:high" }
-Switch gpio_pin5_pwr_boiler   	  "Gray wire     Relay 4"  { gpio="pin:5 activelow:yes initialValue:high" }
+Switch gpio_pin4_pwr_kitchen  	  "Green wire    Relay 3"  { gpio="pin:4 activelow:yes initialValue:high" }
+Switch gpio_pin5_pwr_boiler   	  "Gray wire     Relay 4"  { gpio="pin:5 activelow:yes initialValue:low" }
 Switch gpio_pin6_pwr_2ndfloor 	  "White wire    Relay 5"  { gpio="pin:6 activelow:yes initialValue:high" }
 Switch gpio_pin7_light_corridor   "Purple wire   Relay 14" { gpio="pin:7 activelow:yes initialValue:high" }
 Switch gpio_pin8_light_terrace    "Brown wire    Relay 16" { gpio="pin:8 activelow:yes initialValue:high" }
@@ -14,9 +14,9 @@ Number mqtt_humidity "Влажность,% [%.1f]"   {mqtt="<[local:esp32/humidi
 Number mqtt_water_level "Уровень воды,% [%d]" {mqtt="<[local:watertank/level:state:default]"}
 Number mqtt_empty_space "До крышки,см [%d]" {mqtt="<[local:watertank/empty_space:state:default]"}
 
-Number mqtt_temperature        "Температура (столб),C [%.1f]" (groupTemperatures) {mqtt="<[local:esp32/temperature:state:default]"} 
-Number mqtt_watertank_temp     "Температура (бочка),C [%.1f]" (groupTemperatures) {mqtt="<[local:watertank/temperature:state:default]"} 
-Number mqtt_watertank_bmp_temp "Температура (BME,бочка),C [%.1f]"        (groupTemperatures) {mqtt="<[local:watertank/bme_temp:state:default]"} 
+Number mqtt_temperature        "Температура (столб),C [%.1f]"  (groupTemperatures) {mqtt="<[local:esp32/temperature:state:default]"} 
+Number mqtt_watertank_temp     "Температура (1 этаж),C [%.1f]" (groupTemperatures) {mqtt="<[local:watertank/temperature:state:default]"} 
+Number mqtt_watertank_bmp_temp "Температура (1 этаж, bmp),C [%.1f]"    (groupTemperatures) {mqtt="<[local:watertank/bme_temp:state:default]"} 
 
 Number mqtt_watertank_pressure "Давление,мм [%.1f]" {mqtt="<[local:watertank/pressure:state:default]"} 
 Number mqtt_watertank_altitude "Высота над у.м.,м [%.1f]" {mqtt="<[local:watertank/altitude:state:default]"} 
