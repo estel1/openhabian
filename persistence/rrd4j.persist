@@ -19,11 +19,14 @@ Strategies
 
 Items
 {
-    mqtt_water_level   			: strategy = everyMinute, restoreOnStartup
-    mqtt_empty_space   			: strategy = everyMinute, restoreOnStartup
-    mqtt_temperature   			: strategy = every15sec, restoreOnStartup
-    mqtt_watertank_temp			: strategy = every15sec, restoreOnStartup
-    mqtt_watertank_bmp_temp             : strategy = every15sec, restoreOnStartup
-    mqtt_humidity      			: strategy = everyMinute, restoreOnStartup
-    mqtt_watertank_pressure             : strategy = everyMinute, restoreOnStartup
+    // mqtt_water_level   			: strategy = everyMinute, restoreOnStartup
+    // mqtt_empty_space   			: strategy = everyMinute, restoreOnStartup
+    //mqtt_temperature   			        : strategy = everyMinute, restoreOnStartup
+    mqtt_watertank_temp			        : strategy = everyMinute, restoreOnStartup
+    // mqtt_watertank_bmp_temp             : strategy = every15sec, restoreOnStartup
+    // mqtt_humidity      			: strategy = everyMinute, restoreOnStartup
+    // mqtt_watertank_pressure             : strategy = everyMinute, restoreOnStartup
+    // mqtt_ext_light                      : strategy = everyChange, restoreOnStartup
+    // gpio_pin5_pwr_boiler                : strategy = everyChange, restoreOnStartup
+    // gpio_pin8_light_terrace             : strategy = everyChange, restoreOnStartup    
 }

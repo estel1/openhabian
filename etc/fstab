@@ -12,6 +12,7 @@ PARTUUID=a781020a-02  /               ext4    defaults,noatime  0       1
 /usr/share/openhab2/addons   /srv/openhab2-addons        none bind 0 0
 
 /mnt/sdcard2/var/log         /var/log                    none bind 0 0
+/mnt/sdcard2/var/lib         /var/lib                    none bind 0 0
 
 
 
