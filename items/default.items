@@ -15,10 +15,15 @@ Number mqtt_watertank_humidity "Влажность,% [%.1f]"   {mqtt="<[local:wa
 Number mqtt_water_level "Уровень воды,% [%d]" {mqtt="<[local:watertank/level:state:default]"}
 Number mqtt_empty_space "До крышки,см [%d]" {mqtt="<[local:watertank/empty_space:state:default]"}
 
-Number mqtt_temperature        "Температура (столб),C [%.1f]"  (groupTemperatures) {mqtt="<[local:esp32/temperature:state:default]"} 
+//Number mqtt_temperature        "Температура (столб),C [%.1f]"  (groupTemperatures) {mqtt="<[local:esp32/temperature:state:default]"} 
 //Number mqtt_watertank_temp     "Температура (1 этаж),C [%.1f]" (groupTemperatures) {mqtt="<[local:watertank/temperature:state:default]"} 
-Number mqtt_watertank_temp     "Температура (1 этаж),C [%.1f]" {mqtt="<[local:watertank/temperature:state:default]"} 
-Number mqtt_watertank_bmp_temp "Температура (1 этаж, bmp),C [%.1f]"    (groupTemperatures) {mqtt="<[local:watertank/bme_temp:state:default]"} 
+//Number mqtt_watertank_temp     "Температура (1 этаж),C [%.1f]" {mqtt="<[local:watertank/temperature:state:default]"} 
+//Number mqtt_watertank_bmp_temp "Температура (1 этаж, bmp),C [%.1f]"    (groupTemperatures) {mqtt="<[local:watertank/bme_temp:state:default]"} 
 
-Number mqtt_watertank_pressure "Давление,мм [%.1f]" {mqtt="<[local:watertank/pressure:state:default]"} 
-Number mqtt_watertank_altitude "Высота над у.м.,м [%.1f]" {mqtt="<[local:watertank/altitude:state:default]"} 
+//Number mqtt_watertank_pressure "Давление,мм [%.1f]" {mqtt="<[local:watertank/pressure:state:default]"} 
+//Number mqtt_watertank_altitude "Высота над у.м.,м [%.1f]" {mqtt="<[local:watertank/altitude:state:default]"} 
+
+//Number homie_temperature     "Температура (2 этаж),C [%.1f]" (groupTemperatures)
+
+Number mqtt_temp_1     "Температура (1 этаж),C [%.1f]" (groupTemperatures)  
+Number mqtt_temp_2     "Температура (2 этаж),C [%.1f]" (groupTemperatures)

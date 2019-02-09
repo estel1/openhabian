@@ -1,7 +1,7 @@
-proc                  /proc           proc    defaults          0       0
-PARTUUID=a781020a-01  /boot           vfat    defaults          0       2
-PARTUUID=a781020a-02  /               ext4    defaults,noatime  0       1
-/dev/sda2	      /mnt/sdcard2    ext4    defaults          0       2
+proc            /proc           proc    defaults          0       0
+PARTUUID=af1a96c4-01  /boot           vfat    defaults          0       2
+PARTUUID=af1a96c4-02  /               ext4    defaults,noatime  0       1
+/dev/sda              /mnt/sdcard2    ext4    defaults		0	2
 # a swapfile is not a swap partition, no line here
 #   use  dphys-swapfile swap[on|off]  for that
 
@@ -11,8 +11,6 @@ PARTUUID=a781020a-02  /               ext4    defaults,noatime  0       1
 /var/log/openhab2            /srv/openhab2-logs          none bind 0 0
 /usr/share/openhab2/addons   /srv/openhab2-addons        none bind 0 0
 
-/mnt/sdcard2/var/log         /var/log                    none bind 0 0
-/mnt/sdcard2/var/lib         /var/lib                    none bind 0 0
-
-
+/mnt/sdcard2/var/log         /var/log			 none bind 0 0
+/mnt/sdcard2/var/lib         /var/lib			 none bind 0 0 
 
