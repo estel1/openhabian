@@ -7,12 +7,45 @@
 #include <Wire.h>
 #include <math.h>
 
+#define DEVNAME "DHT11_1" 
+const char* devname                     = DEVNAME ;
+
+struct MqttMsg
+{ 
+  const char* topic ;
+  const char* payload ;
+  boolean retained ;
+} ;
+
+
+MqttMsg HomieInitMsgs[] = 
+{
+  {"homie/"DEVNAME"/$state","init", true},
+  {"homie/"DEVNAME"/$homie","3.0",true},
+  {"homie/"DEVNAME"/$name",devname,true},
+  
+  {"homie/"DEVNAME"/$nodes","Thermometer,Hydrometer",true},
+  {"homie/"DEVNAME"/Thermometer/$properties","temperature",true},
+
+  {"homie/"DEVNAME"/Thermometer/temperature/$name","Temperature",true},
+  {"homie/"DEVNAME"/Thermometer/temperature/$unit","°C",true},
+  {"homie/"DEVNAME"/Thermometer/temperature/$datatype","float",true},
+
+  {"homie/"DEVNAME"/Hydrometer/$name","Hydrometer1floor",true},
+  {"homie/"DEVNAME"/Hydrometer/$properties","humidity",true},
+
+  {"homie/"DEVNAME"/Hydrometer/humidity/$name","Humidity",true},
+  {"homie/"DEVNAME"/Hydrometer/humidity/$unit","mm Hg",true},
+  {"homie/"DEVNAME"/Hydrometer/humidity/$datatype","float",true},
+
+  {"homie/"DEVNAME"/$state","ready",true}
+  
+} ;
+
 // WiFi credentials
 const char* ssid                        = "Keenetic-0079" ;
 const char* password                    = "yoHwLp6B" ;
 
-#define DEVNAME "DHT11_2" 
-const char* devname                     = DEVNAME ;
 
 const char* mqtt_server                 = "192.168.1.54" ;
 const char* syslog_server               = "192.168.1.54" ;
@@ -25,6 +58,7 @@ PubSubClient client(espClient) ;
 DHT dht(DHT_PIN,DHT11) ;
 
 unsigned long lastMsg = 0 ;
+unsigned long lastRegistered = 0 ;
 char msg[50] ;
 int value = 0 ;
 
@@ -119,6 +153,20 @@ void setup_wifi()
 
 boolean register_dht_homie_device()
 {  
+
+  int num_msg = sizeof(HomieInitMsgs)/sizeof(MqttMsg) ;
+  for( int i=0;i<num_msg;i++ )
+  {
+    log_printf( LOG_INFO, "publish %s:%s\n", HomieInitMsgs[i].topic,HomieInitMsgs[i].payload ) ;  
+    while (!client.publish(HomieInitMsgs[i].topic,HomieInitMsgs[i].payload,HomieInitMsgs[i].retained))
+    {
+      log_printf( LOG_INFO, "failed.\n" ) ;  
+      //return (false) ;          
+    }
+    delay(500) ;
+  }
+
+  /*
   if (!client.publish("homie/"DEVNAME"/$state","init", true ))
   {
     log_printf(LOG_ERR, "register_homie_device() failed. - can't publish homie state.\n" ) ;
@@ -144,7 +192,8 @@ boolean register_dht_homie_device()
 
   client.publish("homie/"DEVNAME"/$state","ready",true) ;
   
-  log_printf( LOG_INFO, "Homie device %s registered\n", DEVNAME ) ;  
+  log_printf( LOG_INFO, "Homie device %s registered\n", DEVNAME ) ;
+  */  
   return (true) ;
 }
 
@@ -185,6 +234,12 @@ void loop()
   client.loop() ;
 
   unsigned long now = millis() ;
+  if ( (now - lastRegistered) > 5*60000 ) 
+  {
+    register_dht_homie_device() ;
+    lastRegistered = now ;
+  }
+  
   if (now - lastMsg > 30000) 
   {
     lastMsg = now ;
