@@ -1,13 +1,13 @@
 #include <Syslog.h>
 #include <pins_arduino.h>
 #include <WiFi.h>
-#include <PubSubClient.h>
+#include <MQTT.h>
 #include <DHT.h>
 #include <esp_system.h>
 #include <Wire.h>
 #include <math.h>
 
-#define DEVNAME "DHT11_1" 
+#define DEVNAME "DHT11_2" 
 const char* devname                     = DEVNAME ;
 
 struct MqttMsg
@@ -25,6 +25,8 @@ MqttMsg HomieInitMsgs[] =
   {"homie/"DEVNAME"/$name",devname,true},
   
   {"homie/"DEVNAME"/$nodes","Thermometer,Hydrometer",true},
+
+  {"homie/"DEVNAME"/Thermometer/$name","Termometer",true},
   {"homie/"DEVNAME"/Thermometer/$properties","temperature",true},
 
   {"homie/"DEVNAME"/Thermometer/temperature/$name","Temperature",true},
@@ -46,19 +48,21 @@ MqttMsg HomieInitMsgs[] =
 const char* ssid                        = "Keenetic-0079" ;
 const char* password                    = "yoHwLp6B" ;
 
-
 const char* mqtt_server                 = "192.168.1.54" ;
+const int   mqtt_port                   = 1883 ;
 const char* syslog_server               = "192.168.1.54" ;
 
 // pins_arduino.h
-const int DHT_PIN         = T1 ;
+const int DHT_PIN                       = T1 ;
 
-WiFiClient espClient ;
-PubSubClient client(espClient) ;
+WiFiClient wifi_client ;
+MQTTClient mqtt_client ;
 DHT dht(DHT_PIN,DHT11) ;
+WiFiUDP udpClient ;
+Syslog syslog(udpClient, syslog_server, 514, devname, "monitor", LOG_KERN) ;
 
-unsigned long lastMsg = 0 ;
-unsigned long lastRegistered = 0 ;
+unsigned long lastMsg                   = 0 ;
+unsigned long lastRegistered            = 0 ;
 char msg[50] ;
 int value = 0 ;
 
@@ -76,9 +80,6 @@ void IRAM_ATTR resetModule()
   restartCount++ ;
   esp_restart_noos() ;
 }
-
-WiFiUDP udpClient ;
-Syslog syslog(udpClient, syslog_server, 514, devname, "monitor", LOG_KERN) ;
 
 bool log_printf(uint16_t pri, const char *fmt, ...) 
 {
@@ -110,142 +111,83 @@ bool log_printf(uint16_t pri, const char *fmt, ...)
   
   va_end(args) ;  
   return (result) ;
-  
+}
+
+boolean register_dht_homie_device()
+{  
+  int qos = 2 ;
+  int num_msg = sizeof(HomieInitMsgs)/sizeof(MqttMsg) ;
+  for( int i=0;i<num_msg;i++ )
+  {
+    log_printf( LOG_INFO, "publish %s:%s\n", HomieInitMsgs[i].topic,HomieInitMsgs[i].payload ) ;  
+    while (!mqtt_client.publish(HomieInitMsgs[i].topic,HomieInitMsgs[i].payload,HomieInitMsgs[i].retained, qos))
+    {
+      log_printf( LOG_INFO, "register_dht_homie_device() failed.\n" ) ;  
+      return (false) ; 
+    }
+  }
+  return (true) ;
+}
+
+void connect()
+{
+  log_printf(LOG_INFO, "Check WiFi.\n" ) ;      
+  while (WiFi.status() != WL_CONNECTED) 
+  {
+    delay(1000) ;
+    log_printf(LOG_INFO,".") ;
+  }
+  log_printf( LOG_INFO, "Wifi connected. IP address: %s\n", WiFi.localIP().toString().c_str() ) ;  
+  log_printf(LOG_INFO, "Connecting to Mqtt broker...\n" ) ;      
+  while (!mqtt_client.connected()) 
+  {
+    digitalWrite(LED_BUILTIN, LOW) ;   // turn the LED off
+    if (mqtt_client.connect(devname))
+    {
+      if (register_dht_homie_device())
+      {
+        digitalWrite(LED_BUILTIN, HIGH) ;   // turn the LED on
+        break ;
+      }
+    }
+    delay(1000);
+    log_printf(LOG_INFO, ".") ;
+  }
 }
 
 void setup() 
 {
+  delay(10) ;
   pinMode(LED_BUILTIN, OUTPUT) ;
   digitalWrite(LED_BUILTIN, LOW) ;   // turn the LED off
   
   Serial.begin(115200) ;
+  WiFi.begin(ssid, password) ;
+  mqtt_client.begin( mqtt_server, mqtt_port, wifi_client ) ;
+  dht.begin() ;
+  connect() ;
 
   timer = timerBegin(0, 80, true) ;                  //timer 0, div 80
   timerAttachInterrupt(timer, &resetModule, true) ;  //attach callback
   timerAlarmWrite(timer, wdtTimeout * 1000, false) ; //set time in us
   timerAlarmEnable(timer) ;                          //enable interrupt
-  
-  setup_wifi() ;
-  log_printf(LOG_INFO, "WiFi started!\n" ) ;
-  client.setServer(mqtt_server, 1883) ;
-  //client.setCallback(callback) ;
-
-  dht.begin() ;
-  
-}
-
-void setup_wifi() 
-{
-  delay(10) ;
-  // We start by connecting to a WiFi network
-  log_printf(LOG_INFO, "Connecting to %s", ssid ) ;
-
-  WiFi.begin(ssid, password) ;
-
-  while (WiFi.status() != WL_CONNECTED) 
-  {
-    delay(500) ;
-    Serial.print(".") ;
-  }
-
-  log_printf( LOG_INFO, "Wifi connected. IP address: %s\n", WiFi.localIP().toString().c_str(  ) ) ;  
-}
-
-boolean register_dht_homie_device()
-{  
-
-  int num_msg = sizeof(HomieInitMsgs)/sizeof(MqttMsg) ;
-  for( int i=0;i<num_msg;i++ )
-  {
-    log_printf( LOG_INFO, "publish %s:%s\n", HomieInitMsgs[i].topic,HomieInitMsgs[i].payload ) ;  
-    while (!client.publish(HomieInitMsgs[i].topic,HomieInitMsgs[i].payload,HomieInitMsgs[i].retained))
-    {
-      log_printf( LOG_INFO, "failed.\n" ) ;  
-      //return (false) ;          
-    }
-    delay(500) ;
-  }
-
-  /*
-  if (!client.publish("homie/"DEVNAME"/$state","init", true ))
-  {
-    log_printf(LOG_ERR, "register_homie_device() failed. - can't publish homie state.\n" ) ;
-    return (false) ; 
-  }
-  client.publish("homie/"DEVNAME"/$homie","3.0",true) ;
-  client.publish("homie/"DEVNAME"/$name",devname,true) ;
-  client.publish("homie/"DEVNAME"/$nodes","Thermometer,Hydrometer",true) ;
-  
-  client.publish("homie/"DEVNAME"/Thermometer/$name","Thermometer1floor",true) ;
-  client.publish("homie/"DEVNAME"/Thermometer/$properties","temperature",true) ;
-
-  client.publish("homie/"DEVNAME"/Thermometer/temperature/$name","Temperature",true) ;
-  client.publish("homie/"DEVNAME"/Thermometer/temperature/$unit","°C",true) ;
-  client.publish("homie/"DEVNAME"/Thermometer/temperature/$datatype","float",true) ;
-
-  client.publish("homie/"DEVNAME"/Hydrometer/$name","Hydrometer1floor",true) ;
-  client.publish("homie/"DEVNAME"/Hydrometer/$properties","humidity",true) ;
-
-  client.publish("homie/"DEVNAME"/Hydrometer/humidity/$name","Humidity",true) ;
-  client.publish("homie/"DEVNAME"/Hydrometer/humidity/$unit","mm Hg",true) ;
-  client.publish("homie/"DEVNAME"/Hydrometer/humidity/$datatype","float",true) ;
-
-  client.publish("homie/"DEVNAME"/$state","ready",true) ;
-  
-  log_printf( LOG_INFO, "Homie device %s registered\n", DEVNAME ) ;
-  */  
-  return (true) ;
-}
-
-void reconnect() 
-{
-  // Loop until we're reconnected
-  while (!client.connected()) 
-  {
-    digitalWrite(LED_BUILTIN, LOW) ;   // turn the LED off
-    Serial.print("Attempting MQTT connection...") ;
-    // Attempt to connect
-    if (client.connect(devname)) 
-    {
-      digitalWrite(LED_BUILTIN, HIGH) ;   // turn the LED off
-      Serial.println("connected") ;
-      register_dht_homie_device() ;
-    } 
-    else 
-    {
-      Serial.print("failed, rc=") ;
-      Serial.print(client.state());
-      Serial.println(" try again in 5 seconds") ;
-      // Wait 5 seconds before retrying
-      delay(5000);
-    }
-  }
 }
 
 void loop() 
 {  
+  int qos = 2 ;
 
   timerWrite(timer, 0) ; //reset timer
-
-  if (!client.connected()) 
+  if (!mqtt_client.connected()) 
   {
-    reconnect() ;
+    connect() ;
   }
-  client.loop() ;
+  mqtt_client.loop() ;
 
   unsigned long now = millis() ;
-  if ( (now - lastRegistered) > 5*60000 ) 
-  {
-    register_dht_homie_device() ;
-    lastRegistered = now ;
-  }
-  
   if (now - lastMsg > 30000) 
   {
     lastMsg = now ;
-
-    // DHT11 Sensor
-
     float value = dht.readTemperature() ;
     if (isnan(value))
     {
@@ -256,7 +198,7 @@ void loop()
       temperature = value ;
     }
     String tempMessage( temperature, 2 ) ;
-    client.publish("homie/"DEVNAME"/Thermometer/temperature", tempMessage.c_str(), true ) ;
+    mqtt_client.publish("homie/"DEVNAME"/Thermometer/temperature", tempMessage.c_str(), true, qos ) ;
     log_printf(LOG_INFO, "DHT11 Temperature is: %s °C\n", tempMessage.c_str() ) ;
 
     value = dht.readHumidity() ;
@@ -270,7 +212,7 @@ void loop()
     }
     String humidityMessage( humidity, 2 ) ;
     log_printf(LOG_INFO, "DHT11 Humidity is: %s %%\n", humidityMessage.c_str() ) ;    
-    client.publish("homie/"DEVNAME"/Hydrometer/humidity", humidityMessage.c_str(),true ) ;
+    mqtt_client.publish("homie/"DEVNAME"/Hydrometer/humidity", humidityMessage.c_str(),true,qos ) ;
   }
 }
 
