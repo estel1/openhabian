@@ -3,7 +3,7 @@
 #include <wifiudp.h>
 #include <Syslog.h>
 
-#define DEVNAME "ESP8266_Relay_1" 
+#define DEVNAME "esp8266relay2" 
 const char* devname                     = DEVNAME ;
 
 struct MqttMsg
@@ -15,18 +15,15 @@ struct MqttMsg
 
 MqttMsg HomieInitMsgs[] = 
 {
-  {"homie/"DEVNAME"/$state","init",true},
   {"homie/"DEVNAME"/$homie","3.0",true},
   {"homie/"DEVNAME"/$name",devname,true},
-  {"homie/"DEVNAME"/$nodes","Relay",true},  
-  {"homie/"DEVNAME"/Relay/$name","Relay",true},
-  {"homie/"DEVNAME"/Relay/$properties","power",true},
-  {"homie/"DEVNAME"/Relay/power","false",true},
-  {"homie/"DEVNAME"/Relay/power/$name","power",true},
-  {"homie/"DEVNAME"/Relay/power/$settable","true",true},
-  {"homie/"DEVNAME"/Relay/power/$retained","true",true},
-  {"homie/"DEVNAME"/Relay/power/$datatype","boolean",true},
-  {"homie/"DEVNAME"/$state","ready",true}
+  {"homie/"DEVNAME"/$nodes","relay",true},  
+  {"homie/"DEVNAME"/relay/$name","relay",true},
+  {"homie/"DEVNAME"/relay/$properties","power",true},
+  {"homie/"DEVNAME"/relay/power/$name","power",true},
+  {"homie/"DEVNAME"/relay/power/$settable","true",true},
+  {"homie/"DEVNAME"/relay/power/$retained","true",true},
+  {"homie/"DEVNAME"/relay/power/$datatype","boolean",true},
 } ;
 
 // Replace the next variables with your SSID/Password combination
@@ -78,20 +75,58 @@ bool log_printf(uint16_t pri, const char *fmt, ...)
   return (result) ;
 }
 
+void WaitAndKeepAlive(int sec)
+{
+  for (int i=0;i<sec*10;i++)
+  {
+    mqtt_client.loop() ;
+    delay(100) ;
+  }
+}
+
+boolean setMqttState(const char* state)
+{
+  int qos = 2 ;
+  log_printf( LOG_INFO, "homie/"DEVNAME"/$state ← %s\n",state ) ;  
+  if (!mqtt_client.publish("homie/"DEVNAME"/$state",state,true, qos))
+  {
+      log_printf( LOG_ERR, "[setMqttState]mqtt_client.publish failed.\n" ) ;  
+      return (false) ;
+  }
+}
+
+boolean notifyRelayState(const char* state)
+{
+  int qos = 2 ;
+  log_printf( LOG_INFO, "homie/"DEVNAME"/relay/power ← %s\n",state ) ;  
+  if (!mqtt_client.publish("homie/"DEVNAME"/relay/power",state,true, qos))
+  {
+      log_printf( LOG_ERR, "[notifyRelayState]mqtt_client.publish failed.\n" ) ;  
+      return (false) ;
+  }
+}
+
 boolean register_relay_homie_device()
 {
   int qos = 2 ;
+
   int num_msg = sizeof(HomieInitMsgs)/sizeof(MqttMsg) ;
   for( int i=0;i<num_msg;i++ )
   {
     log_printf( LOG_INFO, "publish %s:%s\n", HomieInitMsgs[i].topic,HomieInitMsgs[i].payload ) ;  
-    while (!mqtt_client.publish(HomieInitMsgs[i].topic,HomieInitMsgs[i].payload,HomieInitMsgs[i].retained,qos))
+    if (!mqtt_client.publish(HomieInitMsgs[i].topic,HomieInitMsgs[i].payload,HomieInitMsgs[i].retained,qos))
     {
       log_printf( LOG_INFO, "register_relay_homie_device() failed.\n" ) ;  
-      delay(1000) ;
+      return (false) ;
     }
   }
-  //homie/kitchen-light/light/power/set ← "true"
+
+  notifyRelayState("false") ;
+
+  // LWT message 
+  log_printf( LOG_INFO, "Set LWT: $state ← disconnected\n" ) ;  
+  mqtt_client.setWill( "homie/"DEVNAME"/$state","disconnected", true, qos ) ;
+  
   return (true) ;
 }
 
@@ -107,14 +142,36 @@ void connect()
   log_printf(LOG_INFO, "Connecting to Mqtt broker...\n" ) ;      
   while (!mqtt_client.connected()) 
   {
+
+    // check for MqttServer completely initialized
+//    if (mqtt_client.connect(devname))
+//    {
+      // disconnect and wait
+//      log_printf(LOG_INFO, "Connected. Disconnect and wait 30s\n" ) ;      
+//      mqtt_client.disconnect() ;
+//      delay(30000) ;      
+//    }
+    
     if (mqtt_client.connect(devname))
     {
+        
+      mqtt_client.setOptions( 60, true, 2000 ) ;
+      
+      setMqttState("disconnected") ;  
+      register_relay_homie_device() ;
+  
+      log_printf(LOG_INFO, "Wait 40s\n" ) ;      
+      WaitAndKeepAlive(40) ;
+            
+      setMqttState("init") ;  
       if (register_relay_homie_device())
       {
-        mqtt_client.subscribe( "homie/"DEVNAME"/Relay/power/set" ) ;
+        mqtt_client.subscribe( "homie/"DEVNAME"/relay/power/set" ) ;
+        setMqttState("ready") ;        
         break ;
       }
-    }
+  
+    }        
     delay(1000) ;
     log_printf(LOG_INFO, ".") ;
   }
@@ -137,7 +194,11 @@ void loop()
   {
     connect() ;
   }
-  mqtt_client.loop() ;
+  if(!mqtt_client.loop())
+  {
+    log_printf( LOG_ERR, "loop failed\n" ) ;
+    mqtt_client.disconnect() ;    
+  }
 }
 
 void callback(MQTTClient *client, char topic[], char message[], int msg_len) 
@@ -147,14 +208,12 @@ void callback(MQTTClient *client, char topic[], char message[], int msg_len)
   {
       if (message[0]=='t')
       {
-        mqtt_client.publish(   "homie/"DEVNAME"/Relay/power","true" ) ;
-        log_printf( LOG_INFO, "homie/"DEVNAME"/Relay/power ← true" ) ;  
+        notifyRelayState("true") ;
         digitalWrite(RELAY_PIN, LOW) ;   
       }
       else if (message[0]=='f')
       {
-        mqtt_client.publish(   "homie/"DEVNAME"/Relay/power","false" ) ;
-        log_printf( LOG_INFO, "homie/"DEVNAME"/Relay/power ← false" ) ;  
+        notifyRelayState("false") ;
         digitalWrite(RELAY_PIN, HIGH) ; 
       }
       else
@@ -163,7 +222,3 @@ void callback(MQTTClient *client, char topic[], char message[], int msg_len)
       
   }
 }
-
-
-
-
