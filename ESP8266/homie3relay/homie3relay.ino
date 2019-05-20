@@ -13,6 +13,9 @@ const char* proname                       = PRONAME ;
 #define DEVPRO      "homie/"DEVNAME"/"NODENAME"/"PRONAME
 #define DEVPROSET   "homie/"DEVNAME"/"NODENAME"/"PRONAME"/set"
 
+const int publishQos = 2 ;
+
+
 struct MqttMsg
 { 
   const char* topic ;
@@ -93,9 +96,8 @@ void WaitAndKeepAlive(int sec)
 
 boolean setMqttState(const char* state)
 {
-  int qos = 2 ;
   log_printf( LOG_INFO, DEVSTATE" ← %s\n",state ) ;  
-  if (!mqtt_client.publish(DEVSTATE,state,true, qos))
+  if (!mqtt_client.publish(DEVSTATE,state,true, publishQos ))
   {
       log_printf( LOG_ERR, "[setMqttState]mqtt_client.publish failed.\n" ) ;  
       return (false) ;
@@ -104,9 +106,8 @@ boolean setMqttState(const char* state)
 
 boolean notifyRelayState(const char* state)
 {
-  int qos = 2 ;
   log_printf( LOG_INFO, DEVPRO" ← %s\n",state ) ;  
-  if (!mqtt_client.publish(DEVPRO,state,true, qos))
+  if (!mqtt_client.publish(DEVPRO,state,true, publishQos ))
   {
       log_printf( LOG_ERR, "[notifyRelayState]mqtt_client.publish failed.\n" ) ;  
       return (false) ;
@@ -115,13 +116,12 @@ boolean notifyRelayState(const char* state)
 
 boolean register_relay_homie_device()
 {
-  int qos = 2 ;
 
   int num_msg = sizeof(HomieInitMsgs)/sizeof(MqttMsg) ;
   for( int i=0;i<num_msg;i++ )
   {
     log_printf( LOG_INFO, "publish %s:%s\n", HomieInitMsgs[i].topic,HomieInitMsgs[i].payload ) ;  
-    if (!mqtt_client.publish(HomieInitMsgs[i].topic,HomieInitMsgs[i].payload,HomieInitMsgs[i].retained,qos))
+    if (!mqtt_client.publish(HomieInitMsgs[i].topic,HomieInitMsgs[i].payload,HomieInitMsgs[i].retained,publishQos))
     {
       log_printf( LOG_INFO, "register_relay_homie_device() failed.\n" ) ;  
       return (false) ;
@@ -132,7 +132,7 @@ boolean register_relay_homie_device()
 
   // LWT message 
   log_printf( LOG_INFO, "Set LWT: $state ← disconnected\n" ) ;  
-  mqtt_client.setWill( DEVSTATE, "disconnected", true, qos ) ;
+  mqtt_client.setWill( DEVSTATE, "disconnected", true, publishQos ) ;
   
   return (true) ;
 }
