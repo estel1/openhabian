@@ -4,7 +4,11 @@
 #include <Syslog.h>
 
 #define DEVNAME "esp8266relay2" 
-const char* devname                     = DEVNAME ;
+const char* devname                       = DEVNAME ;
+#define NODENAME "relay"
+const char* nodename                      = NODENAME ;
+#define PRONAME "power"
+const char* proname                       = PRONAME ;
 
 struct MqttMsg
 { 
@@ -17,13 +21,13 @@ MqttMsg HomieInitMsgs[] =
 {
   {"homie/"DEVNAME"/$homie","3.0",true},
   {"homie/"DEVNAME"/$name",devname,true},
-  {"homie/"DEVNAME"/$nodes","relay",true},  
-  {"homie/"DEVNAME"/relay/$name","relay",true},
-  {"homie/"DEVNAME"/relay/$properties","power",true},
-  {"homie/"DEVNAME"/relay/power/$name","power",true},
-  {"homie/"DEVNAME"/relay/power/$settable","true",true},
-  {"homie/"DEVNAME"/relay/power/$retained","true",true},
-  {"homie/"DEVNAME"/relay/power/$datatype","boolean",true},
+  {"homie/"DEVNAME"/$nodes",nodename,true},  
+  {"homie/"DEVNAME"/"NODENAME"/$name",nodename,true},
+  {"homie/"DEVNAME"/"NODENAME"/$properties",proname,true},
+  {"homie/"DEVNAME"/"NODENAME"/"PRONAME"/$name",proname,true},
+  {"homie/"DEVNAME"/"NODENAME"/"PRONAME"/$settable","true",true},
+  {"homie/"DEVNAME"/"NODENAME"/"PRONAME"/$retained","true",true},
+  {"homie/"DEVNAME"/"NODENAME"/"PRONAME"/$datatype","boolean",true},
 } ;
 
 // Replace the next variables with your SSID/Password combination
