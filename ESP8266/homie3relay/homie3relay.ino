@@ -3,12 +3,15 @@
 #include <wifiudp.h>
 #include <Syslog.h>
 
-#define DEVNAME "esp8266relay2" 
+#define DEVNAME     "esp8266relay2" 
 const char* devname                       = DEVNAME ;
-#define NODENAME "relay"
+#define NODENAME    "relay"
 const char* nodename                      = NODENAME ;
-#define PRONAME "power"
+#define PRONAME     "power"
 const char* proname                       = PRONAME ;
+#define DEVSTATE    "homie/"DEVNAME"/$state"
+#define DEVPRO      "homie/"DEVNAME"/"NODENAME"/"PRONAME
+#define DEVPROSET   "homie/"DEVNAME"/"NODENAME"/"PRONAME"/set"
 
 struct MqttMsg
 { 
@@ -91,8 +94,8 @@ void WaitAndKeepAlive(int sec)
 boolean setMqttState(const char* state)
 {
   int qos = 2 ;
-  log_printf( LOG_INFO, "homie/"DEVNAME"/$state ← %s\n",state ) ;  
-  if (!mqtt_client.publish("homie/"DEVNAME"/$state",state,true, qos))
+  log_printf( LOG_INFO, DEVSTATE" ← %s\n",state ) ;  
+  if (!mqtt_client.publish(DEVSTATE,state,true, qos))
   {
       log_printf( LOG_ERR, "[setMqttState]mqtt_client.publish failed.\n" ) ;  
       return (false) ;
@@ -102,8 +105,8 @@ boolean setMqttState(const char* state)
 boolean notifyRelayState(const char* state)
 {
   int qos = 2 ;
-  log_printf( LOG_INFO, "homie/"DEVNAME"/"NODENAME"/"PRONAME" ← %s\n",state ) ;  
-  if (!mqtt_client.publish("homie/"DEVNAME"/"NODENAME"/"PRONAME,state,true, qos))
+  log_printf( LOG_INFO, DEVPRO" ← %s\n",state ) ;  
+  if (!mqtt_client.publish(DEVPRO,state,true, qos))
   {
       log_printf( LOG_ERR, "[notifyRelayState]mqtt_client.publish failed.\n" ) ;  
       return (false) ;
@@ -129,7 +132,7 @@ boolean register_relay_homie_device()
 
   // LWT message 
   log_printf( LOG_INFO, "Set LWT: $state ← disconnected\n" ) ;  
-  mqtt_client.setWill( "homie/"DEVNAME"/$state","disconnected", true, qos ) ;
+  mqtt_client.setWill( DEVSTATE, "disconnected", true, qos ) ;
   
   return (true) ;
 }
@@ -170,7 +173,7 @@ void connect()
       setMqttState("init") ;  
       if (register_relay_homie_device())
       {
-        mqtt_client.subscribe( "homie/"DEVNAME"/"NODENAME"/"PRONAME"/set" ) ;
+        mqtt_client.subscribe( DEVPROSET ) ;
         setMqttState("ready") ;        
         break ;
       }
