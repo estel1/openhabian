@@ -102,8 +102,8 @@ boolean setMqttState(const char* state)
 boolean notifyRelayState(const char* state)
 {
   int qos = 2 ;
-  log_printf( LOG_INFO, "homie/"DEVNAME"/relay/power ← %s\n",state ) ;  
-  if (!mqtt_client.publish("homie/"DEVNAME"/relay/power",state,true, qos))
+  log_printf( LOG_INFO, "homie/"DEVNAME"/"NODENAME"/"PRONAME" ← %s\n",state ) ;  
+  if (!mqtt_client.publish("homie/"DEVNAME"/"NODENAME"/"PRONAME,state,true, qos))
   {
       log_printf( LOG_ERR, "[notifyRelayState]mqtt_client.publish failed.\n" ) ;  
       return (false) ;
@@ -170,7 +170,7 @@ void connect()
       setMqttState("init") ;  
       if (register_relay_homie_device())
       {
-        mqtt_client.subscribe( "homie/"DEVNAME"/relay/power/set" ) ;
+        mqtt_client.subscribe( "homie/"DEVNAME"/"NODENAME"/"PRONAME"/set" ) ;
         setMqttState("ready") ;        
         break ;
       }
