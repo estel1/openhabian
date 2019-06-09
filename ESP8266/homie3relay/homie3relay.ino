@@ -3,7 +3,7 @@
 #include <wifiudp.h>
 #include <Syslog.h>
 
-#define DEVNAME     "esp8266relay2" 
+#define DEVNAME     "esp8266PumpRelay" 
 const char* devname                       = DEVNAME ;
 #define NODENAME    "relay"
 const char* nodename                      = NODENAME ;
@@ -151,24 +151,22 @@ void connect()
   {
 
     // check for MqttServer completely initialized
-//    if (mqtt_client.connect(devname))
-//    {
-      // disconnect and wait
-//      log_printf(LOG_INFO, "Connected. Disconnect and wait 30s\n" ) ;      
-//      mqtt_client.disconnect() ;
-//      delay(30000) ;      
-//    }
-    
     if (mqtt_client.connect(devname))
     {
-        
-      mqtt_client.setOptions( 60, true, 2000 ) ;
+      setMqttState( "disconnected" ) ;      
+      mqtt_client.disconnect() ;
+      delay(5000) ;      
+    }
+    
+    if (mqtt_client.connect(devname))
+    {        
+      //mqtt_client.setOptions( 60, true, 2000 ) ;
       
       setMqttState("disconnected") ;  
       register_relay_homie_device() ;
   
-      log_printf(LOG_INFO, "Wait 40s\n" ) ;      
-      WaitAndKeepAlive(40) ;
+      log_printf(LOG_INFO, "Wait 30s\n" ) ;      
+      WaitAndKeepAlive(30) ;
             
       setMqttState("init") ;  
       if (register_relay_homie_device())
@@ -177,7 +175,6 @@ void connect()
         setMqttState("ready") ;        
         break ;
       }
-  
     }        
     delay(1000) ;
     log_printf(LOG_INFO, ".") ;

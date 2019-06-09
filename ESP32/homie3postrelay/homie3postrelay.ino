@@ -251,7 +251,11 @@ void setup()
 {
   delay(10) ;
   pinMode(LED_BUILTIN, OUTPUT) ;
+  pinMode(RELAY_PIN, OUTPUT) ;
+  pinMode(BTN_ON_PIN,INPUT_PULLUP) ;
+  pinMode(BTN_OFF_PIN,INPUT_PULLUP) ;
   digitalWrite(LED_BUILTIN, LOW) ;   // turn the LED off
+  digitalWrite(RELAY_PIN, HIGH) ; // turn off relay 
   
   Serial.begin(115200) ;
   WiFi.begin(ssid, password) ;
@@ -298,6 +302,7 @@ void loop()
   while( digitalRead( BTN_OFF_PIN )==HIGH )
   {        
     delay( 10 ) ; msPressed += 10 ;
+    mqtt_client.loop() ;
     if (msPressed>KEYB_PRESS_TIME)
     {
       break ;        

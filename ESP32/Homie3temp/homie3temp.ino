@@ -7,7 +7,7 @@
 #include <Wire.h>
 #include <math.h>
 
-#define DEVNAME "DHT11_2" 
+#define DEVNAME "esp32dht11" 
 const char* devname                     = DEVNAME ;
 
 struct MqttMsg
@@ -40,8 +40,6 @@ MqttMsg HomieInitMsgs[] =
   {"homie/"DEVNAME"/Hydrometer/humidity/$unit","mm Hg",true},
   {"homie/"DEVNAME"/Hydrometer/humidity/$datatype","float",true},
 
-  {"homie/"DEVNAME"/$state","ready",true}
-  
 } ;
 
 // WiFi credentials
@@ -78,7 +76,7 @@ void IRAM_ATTR resetModule()
 {
   ets_printf("reboot\n") ;
   restartCount++ ;
-  esp_restart_noos() ;
+  //esp_restart_noos() ;
 }
 
 bool log_printf(uint16_t pri, const char *fmt, ...) 
@@ -116,16 +114,50 @@ bool log_printf(uint16_t pri, const char *fmt, ...)
 boolean register_dht_homie_device()
 {  
   int qos = 2 ;
+
+  //log_printf( LOG_INFO, "Wait before initializing...\n" ) ;  
+  //delay(10000) ;
+  
+  // Disconnect device
+  log_printf( LOG_INFO, "homie/"DEVNAME"/$state ← disconnected\n" ) ;  
+  if (!mqtt_client.publish("homie/"DEVNAME"/$state","disconnected",true, qos))
+  {
+      log_printf( LOG_ERR, "[register_dht_homie_device]mqtt_client.publish failed.\n" ) ;  
+      return (false) ;
+  }
+  delay(5000) ;
+
+  // Start initialization
+  if (!mqtt_client.publish("homie/"DEVNAME"/$state","init",true, qos))
+  {
+      log_printf( LOG_ERR, "[register_dht_homie_device]mqtt_client.publish failed.\n" ) ;  
+      return (false) ;
+  }
+
   int num_msg = sizeof(HomieInitMsgs)/sizeof(MqttMsg) ;
   for( int i=0;i<num_msg;i++ )
   {
     log_printf( LOG_INFO, "publish %s:%s\n", HomieInitMsgs[i].topic,HomieInitMsgs[i].payload ) ;  
-    while (!mqtt_client.publish(HomieInitMsgs[i].topic,HomieInitMsgs[i].payload,HomieInitMsgs[i].retained, qos))
+    if (!mqtt_client.publish(HomieInitMsgs[i].topic,HomieInitMsgs[i].payload,HomieInitMsgs[i].retained, qos))
     {
       log_printf( LOG_INFO, "register_dht_homie_device() failed.\n" ) ;  
       return (false) ; 
     }
   }
+
+  // LWT message 
+  log_printf( LOG_INFO, "Set LWT: $state ← lost\n" ) ;  
+  mqtt_client.setWill( "homie/"DEVNAME"/$state","lost", true, qos ) ;
+  
+  delay(5000) ;
+  // complete initialization
+  log_printf( LOG_INFO, "homie/"DEVNAME"/$state ← ready\n" ) ;  
+  if (!mqtt_client.publish("homie/"DEVNAME"/$state","ready",true, qos))
+  {
+      log_printf( LOG_ERR, "[register_dht_homie_device]mqtt_client.publish failed.\n" ) ;  
+      return (false) ;
+  }
+
   return (true) ;
 }
 
@@ -142,6 +174,16 @@ void connect()
   while (!mqtt_client.connected()) 
   {
     digitalWrite(LED_BUILTIN, LOW) ;   // turn the LED off
+
+    // check for MqttServer completely initialized
+    if (mqtt_client.connect(devname))
+    {
+      // disconnect and wait
+      log_printf(LOG_INFO, "Connected. Disconnect and wait 30s\n" ) ;      
+      mqtt_client.disconnect() ;
+      delay(30000) ;      
+    }
+    
     if (mqtt_client.connect(devname))
     {
       if (register_dht_homie_device())
@@ -150,7 +192,8 @@ void connect()
         break ;
       }
     }
-    delay(1000);
+    
+    delay(1000) ;
     log_printf(LOG_INFO, ".") ;
   }
 }
@@ -215,5 +258,3 @@ void loop()
     mqtt_client.publish("homie/"DEVNAME"/Hydrometer/humidity", humidityMessage.c_str(),true,qos ) ;
   }
 }
-
-

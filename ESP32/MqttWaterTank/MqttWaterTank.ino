@@ -183,6 +183,19 @@ void reconnect()
     {
       digitalWrite(LED_BUILTIN, HIGH) ;   // turn the LED off
       Serial.println("connected") ;
+
+      client.publish("homie/NodeMCU32S_5501/$homie","3.0") ;
+      client.publish("homie/NodeMCU32S_5501/$name","WaterTank") ;
+      client.publish("homie/NodeMCU32S_5501/$state","ready") ;
+      client.publish("homie/NodeMCU32S_5501/$nodes","Thermometer") ;
+      
+      client.publish("homie/NodeMCU32S_5501/Thermometer/$name","Thermometer_1floor") ;
+      client.publish("homie/NodeMCU32S_5501/Thermometer/$properties","temperature") ;
+
+      client.publish("homie/NodeMCU32S_5501/Thermometer/temperature","0") ;
+      client.publish("homie/NodeMCU32S_5501/Thermometer/temperature/$name","Temperature") ;
+      client.publish("homie/NodeMCU32S_5501/Thermometer/temperature/$unit","°C") ;
+      client.publish("homie/NodeMCU32S_5501/Thermometer/temperature/$datatype","integer") ;
     } 
     else 
     {
@@ -264,6 +277,7 @@ void loop()
     String tempMessage( temperature, 2 ) ;
     log_printf(LOG_INFO, "DHT11 Temperature is: %s C\n", tempMessage.c_str() ) ;
     client.publish(WATERTANK_DHT11_TEMPERATURE, tempMessage.c_str() ) ;
+    client.publish("homie/NodeMCU32S_5501/Thermometer/temperature",tempMessage.c_str()) ;
 
     humidity = dht.readHumidity() ;
     String humidityMessage( humidity, 2 ) ;
