@@ -81,6 +81,7 @@ char msg[50] ;
 int value = 0 ;
 
 int   relayState                        = -1 ;
+float waterLevel                        = 0 ;
 
 int restartCount                        = 0 ;
 const int wdtTimeout                    = 15000 ;  //time in ms to trigger the watchdog
@@ -364,7 +365,6 @@ void loop()
     float distanceTo = duration/58.0 ;
     log_printf(LOG_INFO, "Measured distance is: %.1f cm\n", distanceTo ) ;
     
-    float water_level = 0 ;
     if (distanceTo<invalidDistance)
     {
       // error measurement
@@ -372,21 +372,21 @@ void loop()
     elseif (distanceTo<minDistance)
     {
       // tank full
-      water_level = 100 ;
+      waterLevel = 100 ;
     }
     else
     {
-      water_level = 100.0*(tank_height-distanceTo)/tank_height ;
-      if (water_level<0)
+      waterLevel = 100.0*(tank_height-distanceTo)/tank_height ;
+      if (waterLevel<0)
       {
-        water_level = 0 ;
+        waterLevel = 0 ;
       }
-      else if (water_level>100)
+      else if (waterLevel>100)
       {
-        water_level = 100 ;
+        waterLevel = 100 ;
       }
     }
-    notifyLevel( water_level ) ;    
+    notifyLevel( waterLevel ) ;    
   }
 
 
