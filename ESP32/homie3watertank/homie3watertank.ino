@@ -21,6 +21,7 @@ const char* proname2                      = PRONAME2 ;
 #define DEVPRO      "homie/"DEVNAME"/"NODENAME"/"PRONAME
 #define DEVPRO2     "homie/"DEVNAME"/"NODENAME2"/"PRONAME2
 #define DEVPROSET   "homie/esp32postrelay/relay/power/set"
+#define RELPOWER    "homie/esp32postrelay/relay/power"
 
 struct MqttMsg
 { 
@@ -79,7 +80,7 @@ unsigned long lastRegistered            = 0 ;
 char msg[50] ;
 int value = 0 ;
 
-int   pump_ctl_state                    = -1 ;
+int   relayState                        = -1 ;
 
 int restartCount                        = 0 ;
 const int wdtTimeout                    = 15000 ;  //time in ms to trigger the watchdog
@@ -237,6 +238,7 @@ void connect()
       setMqttState("init") ;  
       if (register_relay_homie_device())
       {
+        mqtt_client.subscribe( RELPOWER ) ;
         setMqttState("ready") ;  
         digitalWrite(LED_BUILTIN, HIGH) ;   // turn the LED off
         break ;
@@ -260,6 +262,7 @@ void setup()
   Serial.begin(115200) ;
   WiFi.begin(ssid, password) ;
   mqtt_client.begin( mqtt_server, mqtt_port, wifi_client ) ;
+  mqtt_client.onMessageAdvanced( callback ) ;
   connect() ;
 
   timer = timerBegin(0, 80, true) ;                  //timer 0, div 80
@@ -315,23 +318,27 @@ void loop()
   }
   else if (btnOn)
   {
-    if ( pump_ctl_state!=1 )
+    log_printf( LOG_INFO, "BTN_ON pressed\n." ) ;  
+    if ( relayState!=1 )
     {
-      pump_ctl_state  = 1 ;
-      notifySwitchState("true") ;
-      //sendRelayCmd("true") ;
-      log_printf( LOG_INFO, "BTN_ON pressed\n." ) ;  
+      sendRelayCmd("true") ;
     }  
+    else
+    {
+      log_printf( LOG_INFO, "Relay already switched on\n." ) ;  
+    }
   }
   else if (btnOff)
   {
-    if ( pump_ctl_state!=0 )
+    log_printf( LOG_INFO, "BTN_OFF pressed\n." ) ;  
+    if ( relayState!=0 )
     {
-      pump_ctl_state  = 0 ;
-      notifySwitchState("false") ;
-      //sendRelayCmd("false") ;
-      log_printf( LOG_INFO, "BTN_OFF pressed\n." ) ;  
+      sendRelayCmd("false") ;
     }  
+    else
+    {
+      log_printf( LOG_INFO, "Relay already switched off\n." ) ;  
+    }
   }
 
   unsigned long now = millis() ;
@@ -383,4 +390,24 @@ void loop()
   }
 
 
+}
+
+void callback(MQTTClient *client, char topic[], char message[], int msg_len) 
+{
+  log_printf( LOG_INFO, "Message arrived on topic %s, length:%d\n", topic, msg_len ) ;  
+  if (msg_len>0)
+  {
+      if (message[0]=='t')
+      {
+        relayState = 1 ;   // somebody switch relay on
+      }
+      else if (message[0]=='f')
+      {
+        relayState = 0 ;   // somebody switch relay off
+      }
+      else
+      {
+      }
+      
+  }
 }
