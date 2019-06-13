@@ -76,7 +76,6 @@ WiFiUDP udpClient ;
 Syslog syslog(udpClient, syslog_server, 514, devname, "monitor", LOG_KERN) ;
 
 unsigned long lastMsg                   = 0 ;
-unsigned long lastRegistered            = 0 ;
 char msg[50] ;
 int value = 0 ;
 
@@ -399,15 +398,16 @@ void callback(MQTTClient *client, char topic[], char message[], int msg_len)
   {
       if (message[0]=='t')
       {
+        log_printf( LOG_INFO, "Relay switched on\n" ) ;  
         relayState = 1 ;   // somebody switch relay on
       }
       else if (message[0]=='f')
       {
+        log_printf( LOG_INFO, "Relay switched off\n" ) ;
         relayState = 0 ;   // somebody switch relay off
       }
       else
       {
-      }
-      
+      }      
   }
 }
