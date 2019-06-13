@@ -29,9 +29,9 @@ struct MqttMsg
   boolean retained ;
 } ;
 
-const int publishQos = 2 ;
-const int numAttempt = 7 ;
-float instantDistances[numAttempt] ;
+const int publishQos        = 2 ;
+const float minDistance     = 21 ; // less than minDistance means 0
+const float invalidDistance = 10 ; // less than invalidDistance means error
 
 MqttMsg HomieInitMsgs[] = 
 {
@@ -340,65 +340,36 @@ void loop()
     lastMsg = now ;
 
     // https://www.instructables.com/id/Distance-Measurement-Using-HC-SR04-Via-NodeMCU/
-
     
-    for (int i=0;i<numAttempt;i++)
-    {
-      // Ultrasonic Sensor
-      // Clears the trigPin
-      digitalWrite(trigPin, LOW) ;
-      delayMicroseconds(20) ;
-  
-      // Sets the trigPin on HIGH state for 10 micro seconds
-      digitalWrite(trigPin, HIGH) ;
-      delayMicroseconds(10) ;
-      digitalWrite(trigPin, LOW) ;
-  
-      // Reads the echoPin, returns the sound wave travel time in microseconds
-      long duration = pulseIn(echoPin, HIGH) ;
+    // Ultrasonic Sensor
+    // Clears the trigPin
+    digitalWrite(trigPin, LOW) ;
+    delayMicroseconds(20) ;
 
-      instantDistances[i] = duration/58.0 ;
-  
-      log_printf(LOG_INFO, "[%02d] Instance distance is: %.1f cm\n", i, instantDistances[i] ) ;
-      
-      delay(50) ;
-      mqtt_client.loop() ;
-      delay(50) ;
-      mqtt_client.loop() ;      
-    }
+    // Sets the trigPin on HIGH state for 10 micro seconds
+    digitalWrite(trigPin, HIGH) ;
+    delayMicroseconds(10) ;
+    digitalWrite(trigPin, LOW) ;
+
+    // Reads the echoPin, returns the sound wave travel time in microseconds
+    long duration = pulseIn(echoPin, HIGH) ;
+
+    float distanceTo = duration/58.0 ;
+    log_printf(LOG_INFO, "Measured distance is: %.1f cm\n", distanceTo ) ;
     
-    float averageDistance = 0.0 ;
-    for (int i=0;i<numAttempt;i++)
+    float water_level = 0 ;
+    if (distanceTo<invalidDistance)
     {
-      averageDistance += instantDistances[i] ;
+      // error measurement
     }
-    averageDistance /= numAttempt ;
-    log_printf(LOG_INFO, "Average distance: %.1f cm\n", averageDistance ) ;
-
-    // Data validation
-    int numValid = 0 ;
-    float estimatedDistance = 0.0 ;
-    for (int i=0;i<numAttempt;i++)
+    elseif (distanceTo<minDistance)
     {
-      if (abs(instantDistances[i]-averageDistance)<5)
-      {
-        estimatedDistance += instantDistances[i] ;
-        numValid ++ ;
-        log_printf(LOG_INFO, "[%02d] Valid instance: %.1f cm\n", i, instantDistances[i] ) ;
-      }
-      else
-      {
-        log_printf(LOG_INFO, "[%02d] invalid instance: %.1f cm\n", i, instantDistances[i] ) ;        
-      }
+      // tank full
+      water_level = 100 ;
     }
-    if (numValid>2)
+    else
     {
-      estimatedDistance /= numValid ;
-      
-      // Prints the distance on the Serial Monitor
-      log_printf(LOG_INFO, "Estimated distance is: %.1f cm\n", estimatedDistance ) ;
-  
-      float water_level = 100.0*(tank_height-estimatedDistance)/tank_height ;
+      water_level = 100.0*(tank_height-distanceTo)/tank_height ;
       if (water_level<0)
       {
         water_level = 0 ;
@@ -407,20 +378,8 @@ void loop()
       {
         water_level = 100 ;
       }
-       
-      notifyLevel( water_level ) ;
     }
-    
-    /*
-    String message ( (float)water_level, 0 ) ;
-    log_printf(LOG_INFO, "Water level is: %s %%\n", message.c_str() ) ;
-    client.publish(WATERTANK_WATER_LEVEL, message.c_str() ) ;
-
-    message = "" ; message += distance ;
-    log_printf(LOG_INFO, "Distance is: %s cm\n", message.c_str() ) ;
-    client.publish(WATERTANK_EMPTY_SPACE, message.c_str() ) ;
-    */
-    
+    notifyLevel( water_level ) ;    
   }
 
 
