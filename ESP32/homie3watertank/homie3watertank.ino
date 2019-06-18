@@ -33,6 +33,7 @@ struct MqttMsg
 const int publishQos        = 2 ;
 const float minDistance     = 21 ; // less than minDistance means 0
 const float invalidDistance = 10 ; // less than invalidDistance means error
+const float alphaFlt        = 0.3 ; // alpha parameter for filter
 
 MqttMsg HomieInitMsgs[] = 
 {
@@ -300,7 +301,7 @@ void loop()
   btnOn = msPressed>KEYB_PRESS_TIME ;
 
   msPressed = 0 ;
-  while( digitalRead( BTN_OFF_PIN )==HIGH )
+  while( digitalRead( BTN_OFF_PIN )==LOW )
   {        
     delay( 10 ) ; msPressed += 10 ;
     mqtt_client.loop() ;
@@ -363,28 +364,32 @@ void loop()
 
     float distanceTo = duration/58.0 ;
     log_printf(LOG_INFO, "Measured distance is: %.1f cm\n", distanceTo ) ;
-    
+
+    float newLevel = waterLevel ;
     if (distanceTo<invalidDistance)
     {
       // error measurement
     }
-    elseif (distanceTo<minDistance)
+    else if (distanceTo<minDistance)
     {
       // tank full
-      waterLevel = 100 ;
+      newLevel = 100 ;
     }
     else
     {
-      waterLevel = 100.0*(tank_height-distanceTo)/tank_height ;
-      if (waterLevel<0)
+      newLevel = 100.0*(tank_height-distanceTo)/tank_height ;
+      if (newLevel<0)
       {
-        waterLevel = 0 ;
+        newLevel = 0 ;
       }
       else if (waterLevel>100)
       {
-        waterLevel = 100 ;
+        newLevel = 100 ;
       }
     }
+    // alpha filter
+    waterLevel = (1-alphaFlt)*waterLevel + alphaFlt*newLevel ;
+    // Notify water level to controller
     notifyLevel( waterLevel ) ;    
   }
 

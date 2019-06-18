@@ -20,20 +20,33 @@ sitemap default label="Дом" {
         {
             //Text item=mqtt_temperature icon="temperature"
             Text item=mqtt_temp_1 icon="temperature"
-            Text item=mqtt_temp_2 icon="temperature"
+            //Text item=mqtt_temp_2 icon="temperature"
             //Text item=mqtt_watertank_bmp_temp icon="temperature"
             //Text item=mqtt_humidity icon="humidity"
             //Text item=mqtt_watertank_humidity icon="humidity"
             //Text item=mqtt_watertank_pressure icon="pressure" valuecolor=[mqtt_watertank_pressure<745="blue", mqtt_watertank_pressure<=755="green", mqtt_watertank_pressure>755="red"]
             //Text item=mqtt_watertank_altitude icon="flow"
-            //Text item=mqtt_water_level icon="cistern" valuecolor=[mqtt_water_level<60="red", mqtt_water_level>80="green"]
+            Text item=mqtt_water_level2 icon="cistern" valuecolor=[mqtt_water_level<60="red", mqtt_water_level>80="green"]
             //Text item=mqtt_empty_space icon="battery" valuecolor=[mqtt_empty_space<7="red"]
-            //Default item=mqtt_pump label="Колодец"
+            Default item=mqtt_pump label="Колодец"
+            //Default item=mqtt_pumph label="TestPumph"
             //Chart item=mqtt_watertank_temp refresh=60000 period=8h legend=true
             //Chart item=mqtt_water_level refresh=20000 period=8h icon="water" legend=true
             //Chart item=mqtt_watertank_pressure refresh=60000 period=1d icon="pressure" legend=true
-            Chart item=groupTemperatures refresh=60000 period=8h legend=true
+            Chart item=mqtt_water_level2 refresh=60000 period=8h legend=true
             //Chart item=mqtt_humidity refresh=60000 period=4h legend=true
+        }
+        Text label="Прогноз погоды" icon="sun_clouds"
+        {
+            Webview url="/weather?locationId=home&layout=example&iconset=colorful" height=7
+            Text item=Weather_temperature icon="temperature"
+            Text item=Wind_Speed_Mps icon="wind"
+            Text item=Pressure icon="pressure"
+            Text item=Ozone icon="sun"
+            Text item=UV_Index icon="sun"
+            Text item=Visibility icon="camera"
+            Text item=Rain icon="rain"
+            Text item=Snow icon="snow"
         }
     }
 }
