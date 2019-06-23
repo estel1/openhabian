@@ -79,7 +79,7 @@ int value = 0 ;
 
 float temperature                       = 0 ;
 float humidity                          = 0 ;
-int   pump_ctl_state                    = -1 ;
+int   relayState                        = -1 ;
 
 int restartCount                        = 0 ;
 const int wdtTimeout                    = 15000 ;  //time in ms to trigger the watchdog
@@ -317,20 +317,16 @@ void loop()
   }
   else if (btnOn)
   {
-    if ( pump_ctl_state!=1 )
+    if ( relayState!=1 )
     {
-      pump_ctl_state  = 1 ;
-      notifySwitchState("true") ;
       sendRelayCmd("true") ;
       log_printf( LOG_INFO, "BTN_ON pressed\n." ) ;  
     }  
   }
   else if (btnOff)
   {
-    if ( pump_ctl_state!=0 )
+    if ( relayState!=0 )
     {
-      pump_ctl_state  = 0 ;
-      notifySwitchState("false") ;
       sendRelayCmd("false") ;
       log_printf( LOG_INFO, "BTN_OFF pressed\n." ) ;  
     }  
@@ -374,12 +370,16 @@ void callback(MQTTClient *client, char topic[], char message[], int msg_len)
       if (message[0]=='t')
       {
         notifyRelayState("true") ;
+        notifySwitchState("true") ;
         digitalWrite(RELAY_PIN, LOW) ;   
-      }
+        relayState = 1 ;   // somebody switch relay on
+     }
       else if (message[0]=='f')
       {
         notifyRelayState("false") ;
+        notifySwitchState("false") ;
         digitalWrite(RELAY_PIN, HIGH) ; 
+        relayState = 0 ;   // somebody switch relay on
       }
       else
       {
