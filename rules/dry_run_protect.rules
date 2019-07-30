@@ -5,8 +5,13 @@ import org.java.math.*
 import org.joda.time.*
 
 rule "Water pump dry running protection"
+// check water level every 10 min
 when
-   Time cron "0 0 0 * * ?"
+   Time cron "0 */10 * * * ?"
 then
-   if (mqtt_water_level2 < 20) Light.sendCommand(ON)
+   if (mqtt_water_level2 < 20) 
+   {
+      // switch off all undegraund equipment if water level < 20 %
+      gpio_pin2.sendCommand(OFF)
+   }
 end
