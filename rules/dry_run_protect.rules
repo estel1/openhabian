@@ -9,9 +9,12 @@ rule "Water pump dry running protection"
 when
    Time cron "0 */10 * * * ?"
 then
+   logInfo("WaterPumpRule", "Checking for tank water level...\n")
+   logInfo("WaterPumpRule", "Water level is: %d\n", mqtt_water_level2 )
    if (mqtt_water_level2 < 20) 
    {
+      logWarn("WaterPumpRule", "Water level is critical! Switch off water pump!!!\n" )
       // switch off all undegraund equipment if water level < 20 %
-      gpio_pin2.sendCommand(OFF)
+      gpio_pin5.sendCommand(OFF)
    }
 end
