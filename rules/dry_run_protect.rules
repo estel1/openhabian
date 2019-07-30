@@ -1,1 +1,12 @@
-#
+import org.openhab.core.library.types.*
+import org.openhab.core.persistence.*
+import org.openhab.model.script.actions.*
+import org.java.math.*
+import org.joda.time.*
+
+rule "Water pump dry running protection"
+when
+   Time cron "0 0 0 * * ?"
+then
+   if (mqtt_water_level2 < 20) Light.sendCommand(ON)
+end
