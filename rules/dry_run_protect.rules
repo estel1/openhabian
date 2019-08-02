@@ -10,8 +10,8 @@ when
    Time cron "0 */10 * * * ?"
 then
    logInfo("WaterPumpRule", "Checking for tank water level...\n")
-   logInfo("WaterPumpRule", "Water level is: %d\n", mqtt_water_level2 )
-   if (mqtt_water_level2 < 20) 
+   logInfo("WaterPumpRule", "Water level is: "+ mqtt_water_level2.state.toString+"%" )
+   if (mqtt_water_level2.state < 20) 
    {
       logWarn("WaterPumpRule", "Water level is critical! Switch off water pump!!!\n" )
       // switch off all undegraund equipment if water level < 20 %
