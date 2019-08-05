@@ -336,7 +336,9 @@ void loop()
     connect() ;
   }
   mqtt_client.loop() ;
-
+  
+  // float level processing
+  notifyFloatLevel( digitalRead( FLOAT_LEVEL_PIN )==LOW ) ;
 
   // keyboard processing
   bool btnOn    = false ;
