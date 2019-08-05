@@ -312,6 +312,7 @@ void setup()
   pinMode(echoPin, INPUT) ;
   pinMode(BTN_ON_PIN,INPUT_PULLUP) ;
   pinMode(BTN_OFF_PIN,INPUT_PULLUP) ;
+  pinMode(FLOAT_LEVEL_PIN,INPUT_PULLUP) ;
   digitalWrite(LED_BUILTIN, LOW) ;   // turn the LED off
   
   Serial.begin(115200) ;
