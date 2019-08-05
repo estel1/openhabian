@@ -13,13 +13,21 @@ const char* devname                       = DEVNAME ;
 const char* nodename                      = NODENAME ;
 #define NODENAME2   "switch"
 const char* nodename2                     = NODENAME2 ;
+#define NODENAME3   "floatlevel"
+const char* nodename3                     = NODENAME3 ;
 #define PRONAME     "level"
 const char* proname                       = PRONAME ;
 #define PRONAME2    "state"
 const char* proname2                      = PRONAME2 ;
+#define PRONAME3    "flag"
+const char* proname3                      = PRONAME3 ;
+#define PRONAME4    "message"
+const char* proname4                      = PRONAME4 ;
 #define DEVSTATE    "homie/"DEVNAME"/$state"
 #define DEVPRO      "homie/"DEVNAME"/"NODENAME"/"PRONAME
 #define DEVPRO2     "homie/"DEVNAME"/"NODENAME2"/"PRONAME2
+#define DEVPRO3     "homie/"DEVNAME"/"NODENAME3"/"PRONAME3
+#define DEVPRO4     "homie/"DEVNAME"/"NODENAME4"/"PRONAME4
 #define DEVPROSET   "homie/esp32postrelay/relay/power/set"
 #define RELPOWER    "homie/esp32postrelay/relay/power"
 
@@ -47,12 +55,28 @@ MqttMsg HomieInitMsgs[] =
   {"homie/"DEVNAME"/"NODENAME"/"PRONAME"/$retained","true",true},
   {"homie/"DEVNAME"/"NODENAME"/"PRONAME"/$datatype","float",true},
   {"homie/"DEVNAME"/"NODENAME"/"PRONAME"/$unit","cm",true},
+  
   {"homie/"DEVNAME"/"NODENAME2"/$name",nodename2,true},
   {"homie/"DEVNAME"/"NODENAME2"/$properties",proname2,true},
   {"homie/"DEVNAME"/"NODENAME2"/"PRONAME2"/$name",proname2,true},
   {"homie/"DEVNAME"/"NODENAME2"/"PRONAME2"/$settable","false",true},
   {"homie/"DEVNAME"/"NODENAME2"/"PRONAME2"/$retained","true",true},
   {"homie/"DEVNAME"/"NODENAME2"/"PRONAME2"/$datatype","boolean",true},
+  
+  {"homie/"DEVNAME"/"NODENAME3"/$name",nodename3,true},
+  {"homie/"DEVNAME"/"NODENAME3"/$properties",proname3,true},
+  {"homie/"DEVNAME"/"NODENAME3"/"PRONAME3"/$name",proname3,true},
+  {"homie/"DEVNAME"/"NODENAME3"/"PRONAME3"/$settable","false",true},
+  {"homie/"DEVNAME"/"NODENAME3"/"PRONAME3"/$retained","true",true},
+  {"homie/"DEVNAME"/"NODENAME3"/"PRONAME3"/$datatype","boolean",true},
+  
+  {"homie/"DEVNAME"/"NODENAME4"/$name",nodename4,true},
+  {"homie/"DEVNAME"/"NODENAME4"/$properties",proname4,true},
+  {"homie/"DEVNAME"/"NODENAME4"/"PRONAME4"/$name",proname4,true},
+  {"homie/"DEVNAME"/"NODENAME4"/"PRONAME4"/$settable","false",true},
+  {"homie/"DEVNAME"/"NODENAME4"/"PRONAME4"/$retained","true",true},
+  {"homie/"DEVNAME"/"NODENAME4"/"PRONAME4"/$datatype","string",true},
+  
 } ;
 
 // WiFi credentials
@@ -64,6 +88,7 @@ const int   mqtt_port                   = 1883 ;
 const char* syslog_server               = "192.168.1.54" ;
 
 // pins_arduino.h
+const int FLOAT_LEVEL_PIN               = T5 ; 
 const int BTN_ON_PIN                    = T8 ;
 const int BTN_OFF_PIN                   = T9 ;
 const int trigPin                       = T7 ;
@@ -165,6 +190,35 @@ boolean notifySwitchState(const char* state)
 {
   log_printf( LOG_INFO, DEVPRO2" ← %s\n",state ) ;  
   if (!mqtt_client.publish(DEVPRO2,state,true, publishQos ))
+  {
+      log_printf( LOG_ERR, "[notifySwitchState]mqtt_client.publish failed.\n" ) ;  
+      return (false) ;
+  }
+  return (true) ;
+}
+
+boolean notifyFloatLevel(bool level)
+{
+  String strLevel ;
+  String strMessage ;
+  if (level)
+  {
+    strLevel    = "true" ;
+    strMessage  = "> 40%" ;
+  }
+  else
+  {
+    strLevel = "false" ;
+    strMessage  = "< 40% !!!" ;
+  }
+  log_printf( LOG_INFO, DEVPRO3" ← %s\n",strLevel.c_str() ) ;  
+  if (!mqtt_client.publish(DEVPRO3,strLevel.c_str(),true, publishQos ))
+  {
+      log_printf( LOG_ERR, "[notifySwitchState]mqtt_client.publish failed.\n" ) ;  
+      return (false) ;
+  }
+  log_printf( LOG_INFO, DEVPRO4" ← %s\n",strMessage.c_str() ) ;
+  if (!mqtt_client.publish(DEVPRO4,strMessage.c_str(),true, publishQos ))
   {
       log_printf( LOG_ERR, "[notifySwitchState]mqtt_client.publish failed.\n" ) ;  
       return (false) ;
