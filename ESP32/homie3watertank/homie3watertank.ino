@@ -338,9 +338,6 @@ void loop()
   }
   mqtt_client.loop() ;
   
-  // float level processing
-  notifyFloatLevel( digitalRead( FLOAT_LEVEL_PIN )==LOW ) ;
-
   // keyboard processing
   bool btnOn    = false ;
   bool btnOff   = false ;
@@ -448,6 +445,10 @@ void loop()
     waterLevel = (1-alphaFlt)*waterLevel + alphaFlt*newLevel ;
     // Notify water level to controller
     notifyLevel( waterLevel ) ;    
+    
+    // float level processing
+    notifyFloatLevel( digitalRead( FLOAT_LEVEL_PIN )==LOW ) ;
+    
   }
 
 
