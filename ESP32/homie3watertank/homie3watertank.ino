@@ -446,6 +446,8 @@ void loop()
     // Notify water level to controller
     notifyLevel( waterLevel ) ;    
     
+    mqtt_client.loop() ;
+    
     // float level processing
     notifyFloatLevel( digitalRead( FLOAT_LEVEL_PIN )==LOW ) ;
     
