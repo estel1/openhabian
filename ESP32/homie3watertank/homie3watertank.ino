@@ -27,7 +27,7 @@ const char* proname4                      = PRONAME4 ;
 #define DEVPRO      "homie/"DEVNAME"/"NODENAME"/"PRONAME
 #define DEVPRO2     "homie/"DEVNAME"/"NODENAME2"/"PRONAME2
 #define DEVPRO3     "homie/"DEVNAME"/"NODENAME3"/"PRONAME3
-#define DEVPRO4     "homie/"DEVNAME"/"NODENAME4"/"PRONAME4
+#define DEVPRO4     "homie/"DEVNAME"/"NODENAME3"/"PRONAME4
 #define DEVPROSET   "homie/esp32postrelay/relay/power/set"
 #define RELPOWER    "homie/esp32postrelay/relay/power"
 
@@ -64,18 +64,16 @@ MqttMsg HomieInitMsgs[] =
   {"homie/"DEVNAME"/"NODENAME2"/"PRONAME2"/$datatype","boolean",true},
   
   {"homie/"DEVNAME"/"NODENAME3"/$name",nodename3,true},
-  {"homie/"DEVNAME"/"NODENAME3"/$properties",proname3,true},
+  {"homie/"DEVNAME"/"NODENAME3"/$properties",PRONAME3","PRONAME4,true},
   {"homie/"DEVNAME"/"NODENAME3"/"PRONAME3"/$name",proname3,true},
   {"homie/"DEVNAME"/"NODENAME3"/"PRONAME3"/$settable","false",true},
   {"homie/"DEVNAME"/"NODENAME3"/"PRONAME3"/$retained","true",true},
   {"homie/"DEVNAME"/"NODENAME3"/"PRONAME3"/$datatype","boolean",true},
   
-  {"homie/"DEVNAME"/"NODENAME4"/$name",nodename4,true},
-  {"homie/"DEVNAME"/"NODENAME4"/$properties",proname4,true},
-  {"homie/"DEVNAME"/"NODENAME4"/"PRONAME4"/$name",proname4,true},
-  {"homie/"DEVNAME"/"NODENAME4"/"PRONAME4"/$settable","false",true},
-  {"homie/"DEVNAME"/"NODENAME4"/"PRONAME4"/$retained","true",true},
-  {"homie/"DEVNAME"/"NODENAME4"/"PRONAME4"/$datatype","string",true},
+  {"homie/"DEVNAME"/"NODENAME3"/"PRONAME4"/$name",proname4,true},
+  {"homie/"DEVNAME"/"NODENAME3"/"PRONAME4"/$settable","false",true},
+  {"homie/"DEVNAME"/"NODENAME3"/"PRONAME4"/$retained","true",true},
+  {"homie/"DEVNAME"/"NODENAME3"/"PRONAME4"/$datatype","string",true},
   
 } ;
 
