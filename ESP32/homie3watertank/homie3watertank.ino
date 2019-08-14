@@ -47,7 +47,7 @@ MqttMsg HomieInitMsgs[] =
 {
   {"homie/"DEVNAME"/$homie","3.0",true},
   {"homie/"DEVNAME"/$name",devname,true},  
-  {"homie/"DEVNAME"/$nodes",NODENAME","NODENAME2,true},
+  {"homie/"DEVNAME"/$nodes",NODENAME","NODENAME2","NODENAME3,true},
   {"homie/"DEVNAME"/"NODENAME"/$name",nodename,true},
   {"homie/"DEVNAME"/"NODENAME"/$properties",proname,true},
   {"homie/"DEVNAME"/"NODENAME"/"PRONAME"/$name",proname,true},
@@ -68,7 +68,7 @@ MqttMsg HomieInitMsgs[] =
   {"homie/"DEVNAME"/"NODENAME3"/"PRONAME3"/$name",proname3,true},
   {"homie/"DEVNAME"/"NODENAME3"/"PRONAME3"/$settable","false",true},
   {"homie/"DEVNAME"/"NODENAME3"/"PRONAME3"/$retained","true",true},
-  {"homie/"DEVNAME"/"NODENAME3"/"PRONAME3"/$datatype","boolean",true},
+  {"homie/"DEVNAME"/"NODENAME3"/"PRONAME3"/$datatype","float",true},
   
   {"homie/"DEVNAME"/"NODENAME3"/"PRONAME4"/$name",proname4,true},
   {"homie/"DEVNAME"/"NODENAME3"/"PRONAME4"/$settable","false",true},
@@ -154,10 +154,10 @@ bool log_printf(uint16_t pri, const char *fmt, ...)
 
 void WaitAndKeepAlive(int sec)
 {
-  for (int i=0;i<sec*10;i++)
+  for (int i=0;i<sec*20;i++)
   {
     mqtt_client.loop() ;
-    delay(100) ;
+    delay(50) ;
   }
 }
 
@@ -201,12 +201,12 @@ boolean notifyFloatLevel(bool level)
   String strMessage ;
   if (level)
   {
-    strLevel    = "true" ;
+    strLevel    = "1" ;
     strMessage  = "> 40%" ;
   }
   else
   {
-    strLevel = "false" ;
+    strLevel = "0" ;
     strMessage  = "< 40% !!!" ;
   }
   log_printf( LOG_INFO, DEVPRO3" ← %s\n",strLevel.c_str() ) ;  
@@ -280,13 +280,13 @@ void connect()
     
     if (mqtt_client.connect(devname))
     {
-      //mqtt_client.setOptions( 60, true, 2000 ) ;
+      mqtt_client.setOptions( 60, true, 2000 ) ;
       
       setMqttState("disconnected") ;  
       register_relay_homie_device() ;
   
-      log_printf(LOG_INFO, "Wait 30s\n" ) ;      
-      WaitAndKeepAlive(30) ;
+      log_printf(LOG_INFO, "Wait 10s\n" ) ;      
+      WaitAndKeepAlive(10) ;
             
       setMqttState("init") ;  
       if (register_relay_homie_device())
@@ -447,7 +447,7 @@ void loop()
     mqtt_client.loop() ;
     
     // float level processing
-    notifyFloatLevel( digitalRead( FLOAT_LEVEL_PIN )==LOW ) ;
+    notifyFloatLevel( digitalRead( FLOAT_LEVEL_PIN )==HIGH ) ;
     
   }
 
