@@ -1,0 +1,20 @@
+var Timer timer = null
+rule "LongPumpRunProtect"
+when
+    Item mqtt_pump received command ON
+then
+    logInfo("LongPumpRunProtectRule", "Pump switched on")
+    if(timer == null) 
+    {
+        logInfo("FILE", "Start pump protection timer")
+        timer = createTimer( now.plusMinutes(5), [|
+            logInfo("LongPumpRunProtectRule", "Pump protection timer elapsed\n")
+            if ( mqtt_pump.state == ON )
+            {
+                logInfo("LongPumpRunProtectRule", "Switch off pump.\n")
+                mqtt_pump.sendCommand(OFF) 
+            }
+            timer = null
+        ])
+    }
+end
