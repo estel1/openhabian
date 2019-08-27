@@ -6,7 +6,7 @@ import org.joda.time.*
 
 rule "turn Testlight on"
 when   
-Time cron "0 00 21 ? * *"
+Time cron "0 00 20 ? * *"
 then
 mqtt_ext_light.sendCommand(ON)
 gpio_pin2.sendCommand(ON)
