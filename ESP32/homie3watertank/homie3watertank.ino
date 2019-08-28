@@ -92,7 +92,8 @@ const int BTN_OFF_PIN                   = T9 ;
 const int trigPin                       = T7 ;
 const int echoPin                       = T6 ;
 
-const int KEYB_PRESS_TIME               = 250 ; // Time to detect btn pressed
+const int KEYB_ON_PRESS_TIME               = 250 ; // Time to detect btn pressed
+const int KEYB_OFF_PRESS_TIME              = 100 ; // Time to detect btn pressed
 
 WiFiClient wifi_client ;
 MQTTClient mqtt_client ;
@@ -345,24 +346,24 @@ void loop()
   {        
     delay( 10 ) ; msPressed += 10 ;
     mqtt_client.loop() ;
-    if (msPressed>KEYB_PRESS_TIME)
+    if (msPressed>KEYB_ON_PRESS_TIME)
     {
       break ;        
     }
   }
-  btnOn = msPressed>KEYB_PRESS_TIME ;
+  btnOn = msPressed>KEYB_ON_PRESS_TIME ;
 
   msPressed = 0 ;
   while( digitalRead( BTN_OFF_PIN )==LOW )
   {        
     delay( 10 ) ; msPressed += 10 ;
     mqtt_client.loop() ;
-    if (msPressed>KEYB_PRESS_TIME)
+    if (msPressed>KEYB_OFF_PRESS_TIME)
     {
       break ;        
     }
   }
-  btnOff = msPressed>KEYB_PRESS_TIME ;
+  btnOff = msPressed>KEYB_OFF_PRESS_TIME ;
 
   if (btnOn && btnOff)
   { 
