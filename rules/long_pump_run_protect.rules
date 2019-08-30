@@ -17,4 +17,8 @@ then
             timer = null
         ])
     }
+    else
+    {
+        timer.reschedule(now.plusMinutes(5))
+    }
 end
