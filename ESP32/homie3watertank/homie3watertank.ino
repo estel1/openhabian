@@ -42,6 +42,9 @@ const int publishQos        = 2 ;
 const float minDistance     = 21 ; // less than minDistance means 0
 const float invalidDistance = 10 ; // less than invalidDistance means error
 const float alphaFlt        = 0.3 ; // alpha parameter for filter
+const float upLevelMin      = 90 ;
+const float upLevelMax      = 85 ;
+const float floatLevelMax   = 50 ;
 
 MqttMsg HomieInitMsgs[] = 
 {
@@ -87,6 +90,7 @@ const char* syslog_server               = "192.168.1.54" ;
 
 // pins_arduino.h
 const int FLOAT_LEVEL_PIN               = T5 ; 
+const int UP_LEVEL_PIN                  = T0 ; 
 const int BTN_ON_PIN                    = T8 ;
 const int BTN_OFF_PIN                   = T9 ;
 const int trigPin                       = T7 ;
@@ -216,7 +220,7 @@ boolean notifyFloatLevel(bool level)
       log_printf( LOG_ERR, "[notifySwitchState]mqtt_client.publish failed.\n" ) ;  
       return (false) ;
   }
-  log_printf( LOG_INFO, DEVPRO4" ← %s\n",strMessage.c_str() ) ;
+  //log_printf( LOG_INFO, DEVPRO4" ← %s\n",strMessage.c_str() ) ;
   if (!mqtt_client.publish(DEVPRO4,strMessage.c_str(),true, publishQos ))
   {
       log_printf( LOG_ERR, "[notifySwitchState]mqtt_client.publish failed.\n" ) ;  
@@ -312,6 +316,7 @@ void setup()
   pinMode(BTN_ON_PIN,INPUT_PULLUP) ;
   pinMode(BTN_OFF_PIN,INPUT_PULLUP) ;
   pinMode(FLOAT_LEVEL_PIN,INPUT_PULLUP) ;
+  pinMode(UP_LEVEL_PIN,INPUT_PULLUP) ;
   digitalWrite(LED_BUILTIN, LOW) ;   // turn the LED off
   
   Serial.begin(115200) ;
@@ -400,6 +405,15 @@ void loop()
   {
     lastMsg = now ;
 
+    // float level processing
+    bool floatLevel = digitalRead( FLOAT_LEVEL_PIN )==HIGH ;
+    notifyFloatLevel( floatLevel ) ;
+    
+    bool upLevel = digitalRead( UP_LEVEL_PIN )==HIGH ;
+    log_printf(LOG_INFO, "Up level status: %d\n", upLevel ) ;
+    
+    mqtt_client.loop() ;
+    
     // https://www.instructables.com/id/Distance-Measurement-Using-HC-SR04-Via-NodeMCU/
     
     // Ultrasonic Sensor
@@ -433,22 +447,36 @@ void loop()
       newLevel = 100.0*(tank_height-distanceTo)/tank_height ;
       if (newLevel<0)
       {
-        newLevel = 0 ;
+        newLevel  = 0 ;
       }
       else if (waterLevel>100)
       {
-        newLevel = 100 ;
+        newLevel  = 100 ;
       }
     }
+
+    if (upLevel && newLevel<upLevelMin)
+    {
+      log_printf(LOG_INFO, "Shift to upper level.\n" ) ;
+      newLevel    = upLevelMin ;
+    }
+    
+    if (!upLevel && newLevel>upLevelMax)
+    {
+      log_printf(LOG_INFO, "Limit to upper level.\n" ) ;
+      newLevel    = upLevelMax ;
+    }
+    
+    if ( !floatLevel && newLevel>floatLevelMax)
+    {
+      log_printf(LOG_INFO, "Limit to float level.\n" ) ;
+      newLevel    = floatLevelMax ;
+    }
+    
     // alpha filter
-    waterLevel = (1-alphaFlt)*waterLevel + alphaFlt*newLevel ;
+    waterLevel    = (1-alphaFlt)*waterLevel + alphaFlt*newLevel ;
     // Notify water level to controller
     notifyLevel( waterLevel ) ;    
-    
-    mqtt_client.loop() ;
-    
-    // float level processing
-    notifyFloatLevel( digitalRead( FLOAT_LEVEL_PIN )==HIGH ) ;
     
   }
 

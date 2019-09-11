@@ -7,8 +7,22 @@
 #include <Wire.h>
 #include <math.h>
 
-#define DEVNAME "esp32dht11" 
-const char* devname                     = DEVNAME ;
+#define DEVNAME     "TTGO_term" 
+const char* devname                       = DEVNAME ;
+#define NODENAME    "Thermometer"
+const char* nodename                      = NODENAME ;
+#define PRONAME     "Temperature"
+const char* proname                       = PRONAME ;
+#define DEVSTATE    "homie/"DEVNAME"/$state"
+#define DEVPRO      "homie/"DEVNAME"/"NODENAME"/"PRONAME
+
+const int publishQos      = 2 ;
+// pins_arduino.h
+const int DHT_PIN         = T0 ;
+float     temperature     = 0 ;
+float     humidity        = 0 ;
+
+DHT       dht( DHT_PIN, DHT22 ) ;
 
 struct MqttMsg
 { 
@@ -17,45 +31,31 @@ struct MqttMsg
   boolean retained ;
 } ;
 
-
 MqttMsg HomieInitMsgs[] = 
 {
-  {"homie/"DEVNAME"/$state","init", true},
   {"homie/"DEVNAME"/$homie","3.0",true},
   {"homie/"DEVNAME"/$name",devname,true},
-  
-  {"homie/"DEVNAME"/$nodes","Thermometer,Hydrometer",true},
-
-  {"homie/"DEVNAME"/Thermometer/$name","Termometer",true},
-  {"homie/"DEVNAME"/Thermometer/$properties","temperature",true},
-
-  {"homie/"DEVNAME"/Thermometer/temperature/$name","Temperature",true},
-  {"homie/"DEVNAME"/Thermometer/temperature/$unit","°C",true},
-  {"homie/"DEVNAME"/Thermometer/temperature/$datatype","float",true},
-
-  {"homie/"DEVNAME"/Hydrometer/$name","Hydrometer1floor",true},
-  {"homie/"DEVNAME"/Hydrometer/$properties","humidity",true},
-
-  {"homie/"DEVNAME"/Hydrometer/humidity/$name","Humidity",true},
-  {"homie/"DEVNAME"/Hydrometer/humidity/$unit","mm Hg",true},
-  {"homie/"DEVNAME"/Hydrometer/humidity/$datatype","float",true},
-
+  {"homie/"DEVNAME"/$nodes",nodename,true},  
+  {"homie/"DEVNAME"/"NODENAME"/$name",nodename,true},
+  {"homie/"DEVNAME"/"NODENAME"/$properties",proname,true},
+  {"homie/"DEVNAME"/"NODENAME"/"PRONAME"/$name",proname,true},
+  {"homie/"DEVNAME"/"NODENAME"/"PRONAME"/$settable","false",true},
+  {"homie/"DEVNAME"/"NODENAME"/"PRONAME"/$retained","true",true},
+  {"homie/"DEVNAME"/"NODENAME"/"PRONAME"/$unit","°C",true},
+  {"homie/"DEVNAME"/"NODENAME"/"PRONAME"/$datatype","float",true},
 } ;
 
-// WiFi credentials
-const char* ssid                        = "Keenetic-0079" ;
-const char* password                    = "yoHwLp6B" ;
+// Replace the next variables with your SSID/Password combination
+const char*     ssid                        = "Keenetic-0079" ;
+const char*     password                    = "yoHwLp6B" ;
 
-const char* mqtt_server                 = "192.168.1.54" ;
-const int   mqtt_port                   = 1883 ;
-const char* syslog_server               = "192.168.1.54" ;
+const char*     mqtt_server                 = "192.168.1.54" ;
+const int       mqtt_port                   = 1883 ;
+const char*     syslog_server               = "192.168.1.54" ;
 
-// pins_arduino.h
-const int DHT_PIN                       = T1 ;
 
 WiFiClient wifi_client ;
 MQTTClient mqtt_client ;
-DHT dht(DHT_PIN,DHT11) ;
 WiFiUDP udpClient ;
 Syslog syslog(udpClient, syslog_server, 514, devname, "monitor", LOG_KERN) ;
 
@@ -64,8 +64,6 @@ unsigned long lastRegistered            = 0 ;
 char msg[50] ;
 int value = 0 ;
 
-float temperature = 0 ;
-float humidity = 0 ;
 
 int restartCount = 0 ;
 const int wdtTimeout = 15000 ;  //time in ms to trigger the watchdog
@@ -76,7 +74,7 @@ void IRAM_ATTR resetModule()
 {
   ets_printf("reboot\n") ;
   restartCount++ ;
-  //esp_restart_noos() ;
+  esp_restart() ;
 }
 
 bool log_printf(uint16_t pri, const char *fmt, ...) 
@@ -201,9 +199,7 @@ void connect()
 void setup() 
 {
   delay(10) ;
-  pinMode(LED_BUILTIN, OUTPUT) ;
-  digitalWrite(LED_BUILTIN, LOW) ;   // turn the LED off
-  
+
   Serial.begin(115200) ;
   WiFi.begin(ssid, password) ;
   mqtt_client.begin( mqtt_server, mqtt_port, wifi_client ) ;
@@ -240,9 +236,7 @@ void loop()
     {
       temperature = value ;
     }
-    String tempMessage( temperature, 2 ) ;
-    mqtt_client.publish("homie/"DEVNAME"/Thermometer/temperature", tempMessage.c_str(), true, qos ) ;
-    log_printf(LOG_INFO, "DHT11 Temperature is: %s °C\n", tempMessage.c_str() ) ;
+    notifyTempValue(temperature) ;
 
     value = dht.readHumidity() ;
     if (isnan(value))
@@ -256,5 +250,16 @@ void loop()
     String humidityMessage( humidity, 2 ) ;
     log_printf(LOG_INFO, "DHT11 Humidity is: %s %%\n", humidityMessage.c_str() ) ;    
     mqtt_client.publish("homie/"DEVNAME"/Hydrometer/humidity", humidityMessage.c_str(),true,qos ) ;
+  }
+}
+
+boolean notifyTempValue(float Temp)
+{
+  String tempMessage( Temp, 2 ) ;
+  log_printf( LOG_INFO, DEVPRO" ← %s\n",tempMessage.c_str() ) ;  
+  if (!mqtt_client.publish(DEVPRO,tempMessage.c_str(),true, publishQos ))
+  {
+      log_printf( LOG_ERR, "[notifyRelayState]mqtt_client.publish failed.\n" ) ;  
+      return (false) ;
   }
 }
