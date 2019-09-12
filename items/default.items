@@ -13,6 +13,7 @@ Number mqtt_water_level 	"Уровень воды,% [%.0f]"
 Number mqtt_watertank_full 	"Датчик наполнения [%s]"
 Number mqtt_temp     		"Температура ,C [%.1f]"  
 
+
 //Switch mqtt_pumph 		"Pumph" { mqtt=">[local:pumph:command:ON:1],>[local:pumph:command:OFF:0],<[local:pumph:state:OFF:0],<[local:pumph:state:ON:1]" }
 //Number mqtt_empty_space 	"До крышки,см [%d]" {mqtt="<[local:watertank/empty_space:state:default]"}
 //Number mqtt_humidity 		"Влажность,% [%.1f]"   {mqtt="<[local:esp32/humidity:state:default]"}

@@ -26,7 +26,7 @@ sitemap default label="Дом" {
         Text label="Камеры" icon="camera"
         {
 		    Webview item=TTGO_IPCAM1 url="http://192.168.1.55"      icon="camera"   height=17
-		    Webview item=TTGO_IPCAM2 url="https://www.microsoft.com/ru-ru/"     icon="camera"   height=17
+		    Webview item=TTGO_IPCAM2 url="http://192.168.1.1"     icon="camera"   height=17
 	    }
     }
 }
