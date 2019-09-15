@@ -18,15 +18,15 @@ sitemap default label="Дом" {
             Text 	item=mqtt_water_level 	    icon="cistern" 			    valuecolor=[mqtt_water_level<60="red", mqtt_water_level>80="green"]
             Default item=mqtt_pump 			    label="Колодец"
 	        Default item=mqtt_watertank_full 	label="Датчик наполнения" 	icon="softener" valuecolor=[mqtt_watertank_full<1="red", mqtt_watertank_full>0="green"]
-            Chart 	item=mqtt_temp 			    refresh=60000 			    period=8h legend=true
-            Chart 	item=mqtt_water_level		refresh=60000 			    period=8h legend=true
-            Chart 	item=mqtt_watertank_full	refresh=60000 			    period=8h legend=true
-            Chart 	item=mqtt_pump			    refresh=60000 			    period=8h legend=true
+            Chart 	item=mqtt_temp 			    refresh=60000 			    period=16h legend=true
+            Chart 	item=mqtt_water_level		refresh=60000 			    period=16h legend=true
+            Chart 	item=mqtt_pump			    refresh=60000 			    period=16h legend=true
+            Chart 	item=mqtt_watertank_full	refresh=60000 			    period=16h legend=true
         }
         Text label="Камеры" icon="camera"
         {
 		    Webview item=TTGO_IPCAM1 url="http://192.168.1.55"      icon="camera"   height=17
-		    Webview item=TTGO_IPCAM2 url="http://192.168.1.1"     icon="camera"   height=17
+		    Webview item=TTGO_IPCAM2 url="https://www.microsoft.com/ru-ru/"     icon="camera"   height=17
 	    }
     }
 }

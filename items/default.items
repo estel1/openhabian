@@ -3,17 +3,19 @@ Switch gpio_pin2		"Redhead wire  Relay 1"  { gpio="pin:2 activelow:no initialVal
 Switch gpio_pin3	 	"Yellow wire   Relay 2"  { gpio="pin:3 activelow:no initialValue:high" }
 Switch gpio_pin4	  	"Green wire    Relay 3"  { gpio="pin:4 activelow:no initialValue:high" }
 Switch gpio_pin5	   	"Gray wire     Relay 4"  { gpio="pin:5 activelow:no initialValue:high" }
-Switch gpio_pin6	 	"White wire    Relay 5"  { gpio="pin:6 activelow:no initialValue:low" }
+Switch gpio_pin6	 	"White wire    Relay 5"  { gpio="pin:6 activelow:no initialValue:high" }
 Switch gpio_pin7	        "Purple wire   Relay 6"  { gpio="pin:7 activelow:no initialValue:high" }
 Switch gpio_pin8		"Red wire      Relay 7"  { gpio="pin:8 activelow:no initialValue:low" }
 
-Switch mqtt_pump 		"Pump" { mqtt=">[local:pump:command:ON:default],>[local:pump:command:OFF:default],<[local:pump:state:OFF:default],<[local:pump:state:ON:default]" }
-Switch mqtt_ext_light 		"ext_light" { mqtt=">[local:ext_light:command:ON:1],>[local:ext_light:command:OFF:0],<[local:ext_light:state:OFF:0],<[local:ext_light:state:ON:1]" }
+Switch mqtt_pump 		"Колодец" 
+Switch mqtt_ext_light 		"Свет" 
 Number mqtt_water_level 	"Уровень воды,% [%.0f]"
 Number mqtt_watertank_full 	"Датчик наполнения [%s]"
 Number mqtt_temp     		"Температура ,C [%.1f]"  
 
 
+//Switch mqtt_ext_light 	"ext_light" { mqtt=">[local:ext_light:command:ON:1],>[local:ext_light:command:OFF:0],<[local:ext_light:state:OFF:0],<[local:ext_light:state:ON:1]" }
+//Switch mqtt_pump 		"Pump" { mqtt=">[local:pump:command:ON:default],>[local:pump:command:OFF:default],<[local:pump:state:OFF:default],<[local:pump:state:ON:default]" }
 //Switch mqtt_pumph 		"Pumph" { mqtt=">[local:pumph:command:ON:1],>[local:pumph:command:OFF:0],<[local:pumph:state:OFF:0],<[local:pumph:state:ON:1]" }
 //Number mqtt_empty_space 	"До крышки,см [%d]" {mqtt="<[local:watertank/empty_space:state:default]"}
 //Number mqtt_humidity 		"Влажность,% [%.1f]"   {mqtt="<[local:esp32/humidity:state:default]"}
