@@ -17,11 +17,11 @@ sitemap default label="Дом" {
             Text 	item=mqtt_temp 			    icon="temperature"
             Text 	item=mqtt_water_level 	    icon="cistern" 			    valuecolor=[mqtt_water_level<60="red", mqtt_water_level>80="green"]
             Default item=mqtt_pump 			    label="Колодец"
-	        Default item=mqtt_watertank_full 	label="Датчик наполнения" 	icon="softener" valuecolor=[mqtt_watertank_full<1="red", mqtt_watertank_full>0="green"]
+	        Default item=float_levels   	    label="Датчики наполнения" 	icon="softener" valuecolor=[mqtt_float_level<1="red", mqtt_float_level>0="green"]
             Chart 	item=mqtt_temp 			    refresh=60000 			    period=16h legend=true
             Chart 	item=mqtt_water_level		refresh=60000 			    period=16h legend=true
             Chart 	item=mqtt_pump			    refresh=60000 			    period=16h legend=true
-            Chart 	item=mqtt_watertank_full	refresh=60000 			    period=16h legend=true
+            Chart 	item=float_levels	        refresh=60000 			    period=16h legend=true
         }
         Text label="Камеры" icon="camera"
         {

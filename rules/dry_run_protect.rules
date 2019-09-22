@@ -1,8 +1,3 @@
-import org.openhab.core.library.types.*
-import org.openhab.core.persistence.*
-import org.openhab.model.script.actions.*
-import org.java.math.*
-import org.joda.time.*
 
 rule "Water pump dry running protection"
 // check water level every 10 min
@@ -11,7 +6,7 @@ when
 then
    logInfo("WaterPumpRule", "Checking for tank water level...\n")
    logInfo("WaterPumpRule", "Water level is: "+ mqtt_water_level.state.toString+"%" )
-   if (mqtt_water_level.state < 40) 
+   if (mqtt_water_level.state < 35) 
    {
       logWarn("WaterPumpRule", "Water level is critical! Switch off water pump!!!\n" )
       // switch off all undergraund equipment if water level < 40 %

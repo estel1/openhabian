@@ -21,5 +21,7 @@ Items
 {
 	mqtt_temp		: strategy = everyMinute, restoreOnStartup
 	mqtt_water_level	: strategy = everyMinute, restoreOnStartup
-	mqtt_watertank_full     : strategy = everyMinute, restoreOnStartup
+	mqtt_float_level     	: strategy = everyMinute, restoreOnStartup
+	mqtt_up_level     	: strategy = everyMinute, restoreOnStartup
+	mqtt_pump               : strategy = everyMinute, restoreOnStartup
 }

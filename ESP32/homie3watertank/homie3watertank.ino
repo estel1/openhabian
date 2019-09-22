@@ -15,6 +15,8 @@ const char* nodename                      = NODENAME ;
 const char* nodename2                     = NODENAME2 ;
 #define NODENAME3   "floatlevel"
 const char* nodename3                     = NODENAME3 ;
+#define NODENAME4   "uplevel"
+const char* nodename4                     = NODENAME4 ;
 #define PRONAME     "level"
 const char* proname                       = PRONAME ;
 #define PRONAME2    "state"
@@ -23,11 +25,14 @@ const char* proname2                      = PRONAME2 ;
 const char* proname3                      = PRONAME3 ;
 #define PRONAME4    "message"
 const char* proname4                      = PRONAME4 ;
+#define PRONAME5    "flag"
+const char* proname5                      = PRONAME5 ;
 #define DEVSTATE    "homie/"DEVNAME"/$state"
 #define DEVPRO      "homie/"DEVNAME"/"NODENAME"/"PRONAME
 #define DEVPRO2     "homie/"DEVNAME"/"NODENAME2"/"PRONAME2
 #define DEVPRO3     "homie/"DEVNAME"/"NODENAME3"/"PRONAME3
 #define DEVPRO4     "homie/"DEVNAME"/"NODENAME3"/"PRONAME4
+#define DEVPRO5     "homie/"DEVNAME"/"NODENAME4"/"PRONAME5
 #define DEVPROSET   "homie/esp32postrelay/relay/power/set"
 #define RELPOWER    "homie/esp32postrelay/relay/power"
 
@@ -50,7 +55,7 @@ MqttMsg HomieInitMsgs[] =
 {
   {"homie/"DEVNAME"/$homie","3.0",true},
   {"homie/"DEVNAME"/$name",devname,true},  
-  {"homie/"DEVNAME"/$nodes",NODENAME","NODENAME2","NODENAME3,true},
+  {"homie/"DEVNAME"/$nodes",NODENAME","NODENAME2","NODENAME3","NODENAME4,true},
   {"homie/"DEVNAME"/"NODENAME"/$name",nodename,true},
   {"homie/"DEVNAME"/"NODENAME"/$properties",proname,true},
   {"homie/"DEVNAME"/"NODENAME"/"PRONAME"/$name",proname,true},
@@ -77,6 +82,13 @@ MqttMsg HomieInitMsgs[] =
   {"homie/"DEVNAME"/"NODENAME3"/"PRONAME4"/$settable","false",true},
   {"homie/"DEVNAME"/"NODENAME3"/"PRONAME4"/$retained","true",true},
   {"homie/"DEVNAME"/"NODENAME3"/"PRONAME4"/$datatype","string",true},
+  
+  {"homie/"DEVNAME"/"NODENAME4"/$name",nodename4,true},
+  {"homie/"DEVNAME"/"NODENAME4"/$properties",PRONAME5,true},
+  {"homie/"DEVNAME"/"NODENAME4"/"PRONAME5"/$name",proname5,true},
+  {"homie/"DEVNAME"/"NODENAME4"/"PRONAME5"/$settable","false",true},
+  {"homie/"DEVNAME"/"NODENAME4"/"PRONAME5"/$retained","true",true},
+  {"homie/"DEVNAME"/"NODENAME4"/"PRONAME5"/$datatype","float",true},
   
 } ;
 
@@ -224,6 +236,27 @@ boolean notifyFloatLevel(bool level)
   if (!mqtt_client.publish(DEVPRO4,strMessage.c_str(),true, publishQos ))
   {
       log_printf( LOG_ERR, "[notifySwitchState]mqtt_client.publish failed.\n" ) ;  
+      return (false) ;
+  }
+  return (true) ;
+}
+
+//#define DEVPRO5     "homie/"DEVNAME"/"NODENAME4"/"PRONAME5
+boolean notifyUpLevel(bool level)
+{
+  String strLevel ;
+  if (level)
+  {
+    strLevel    = "1" ;
+  }
+  else
+  {
+    strLevel    = "0" ;
+  }
+  log_printf( LOG_INFO, DEVPRO5" ← %s\n", strLevel.c_str() ) ;  
+  if (!mqtt_client.publish(DEVPRO5,strLevel.c_str(),true, publishQos ))
+  {
+      log_printf( LOG_ERR, "[notifyUpLevel]mqtt_client.publish failed.\n" ) ;  
       return (false) ;
   }
   return (true) ;
@@ -410,7 +443,7 @@ void loop()
     notifyFloatLevel( floatLevel ) ;
     
     bool upLevel = digitalRead( UP_LEVEL_PIN )==HIGH ;
-    log_printf(LOG_INFO, "Up level status: %d\n", upLevel ) ;
+    notifyUpLevel( upLevel ) ;
     
     mqtt_client.loop() ;
     

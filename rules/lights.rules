@@ -1,12 +1,6 @@
-import org.openhab.core.library.types.*
-import org.openhab.core.persistence.*
-import org.openhab.model.script.actions.*
-import org.java.math.*
-import org.joda.time.*
-
 rule "turn Testlight on"
 when   
-Time cron "0 00 20 ? * *"
+Time cron "0 30 18 ? * *"
 then
 mqtt_ext_light.sendCommand(ON)
 gpio_pin2.sendCommand(ON)
