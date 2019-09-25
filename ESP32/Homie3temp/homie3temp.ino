@@ -6,6 +6,7 @@
 #include <esp_system.h>
 #include <Wire.h>
 #include <math.h>
+#include "SSD1306.h"
 
 #define DEVNAME     "TTGO_term" 
 const char* devname                       = DEVNAME ;
@@ -23,6 +24,12 @@ float     temperature     = 0 ;
 float     humidity        = 0 ;
 
 DHT       dht( DHT_PIN, DHT22 ) ;
+
+#define OLED_ADDRESS 0x3c
+#define I2C_SDA 14
+#define I2C_SCL 13
+SSD1306Wire display( OLED_ADDRESS, I2C_SDA, I2C_SCL, GEOMETRY_128_32 ) ;
+
 
 struct MqttMsg
 { 
@@ -206,6 +213,13 @@ void setup()
   dht.begin() ;
   connect() ;
 
+  display.init() ;
+  display.flipScreenVertically() ;
+  display.setFont(ArialMT_Plain_16) ;
+  display.setTextAlignment(TEXT_ALIGN_CENTER) ;
+  display.drawString(128 / 2, 32 / 2, WiFi.localIP().toString()) ;
+  display.display() ;
+
   timer = timerBegin(0, 80, true) ;                  //timer 0, div 80
   timerAttachInterrupt(timer, &resetModule, true) ;  //attach callback
   timerAlarmWrite(timer, wdtTimeout * 1000, false) ; //set time in us
@@ -262,4 +276,12 @@ boolean notifyTempValue(float Temp)
       log_printf( LOG_ERR, "[notifyRelayState]mqtt_client.publish failed.\n" ) ;  
       return (false) ;
   }
+
+  display.init() ;
+  display.flipScreenVertically() ;
+  display.setFont(ArialMT_Plain_24) ;
+  display.setTextAlignment(TEXT_ALIGN_CENTER) ;
+  display.drawString(128 / 2, 1, tempMessage.c_str() ) ;
+  display.display() ;
+
 }
