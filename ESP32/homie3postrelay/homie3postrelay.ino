@@ -13,14 +13,19 @@ const char* devname                       = DEVNAME ;
 const char* nodename                      = NODENAME ;
 #define NODENAME2   "switch"
 const char* nodename2                     = NODENAME2 ;
+#define NODENAME3   "Thermometer"
+const char* nodename3                     = NODENAME3 ;
 #define PRONAME     "power"
 const char* proname                       = PRONAME ;
 #define PRONAME2    "state"
 const char* proname2                      = PRONAME2 ;
+#define PRONAME3    "Temperature"
+const char* proname3                      = PRONAME3 ;
 #define DEVSTATE    "homie/"DEVNAME"/$state"
 #define DEVPRO      "homie/"DEVNAME"/"NODENAME"/"PRONAME
 #define DEVPRO2     "homie/"DEVNAME"/"NODENAME2"/"PRONAME2
 #define DEVPROSET   "homie/"DEVNAME"/"NODENAME"/"PRONAME"/set"
+#define DEVPRO3     "homie/"DEVNAME"/"NODENAME3"/"PRONAME3
 
 struct MqttMsg
 { 
@@ -35,7 +40,7 @@ MqttMsg HomieInitMsgs[] =
 {
   {"homie/"DEVNAME"/$homie","3.0",true},
   {"homie/"DEVNAME"/$name",devname,true},  
-  {"homie/"DEVNAME"/$nodes",NODENAME","NODENAME2,true},
+  {"homie/"DEVNAME"/$nodes",NODENAME","NODENAME2","NODENAME3,true},
   {"homie/"DEVNAME"/"NODENAME"/$name",nodename,true},
   {"homie/"DEVNAME"/"NODENAME"/$properties",proname,true},
   {"homie/"DEVNAME"/"NODENAME"/"PRONAME"/$name",proname,true},
@@ -48,6 +53,13 @@ MqttMsg HomieInitMsgs[] =
   {"homie/"DEVNAME"/"NODENAME2"/"PRONAME2"/$settable","false",true},
   {"homie/"DEVNAME"/"NODENAME2"/"PRONAME2"/$retained","true",true},
   {"homie/"DEVNAME"/"NODENAME2"/"PRONAME2"/$datatype","boolean",true},
+  {"homie/"DEVNAME"/"NODENAME3"/$name",nodename3,true},
+  {"homie/"DEVNAME"/"NODENAME3"/$properties",proname3,true},
+  {"homie/"DEVNAME"/"NODENAME3"/"PRONAME3"/$name",proname3,true},
+  {"homie/"DEVNAME"/"NODENAME3"/"PRONAME3"/$settable","false",true},
+  {"homie/"DEVNAME"/"NODENAME3"/"PRONAME3"/$retained","true",true},
+  {"homie/"DEVNAME"/"NODENAME3"/"PRONAME3"/$unit","°C",true},
+  {"homie/"DEVNAME"/"NODENAME3"/"PRONAME3"/$datatype","float",true},
 } ;
 
 // WiFi credentials
@@ -69,7 +81,7 @@ const int KEYB_OFF_PRESS_TIME           = 150 ; // Time to detect off btn presse
 
 WiFiClient wifi_client ;
 MQTTClient mqtt_client ;
-DHT dht(DHT_PIN,DHT11) ;
+DHT dht(DHT_PIN,DHT22) ;
 WiFiUDP udpClient ;
 Syslog syslog(udpClient, syslog_server, 514, devname, "monitor", LOG_KERN) ;
 
@@ -166,6 +178,17 @@ boolean notifySwitchState(const char* state)
       return (false) ;
   }
   return (true) ;
+}
+
+boolean notifyTempValue(float Temp)
+{
+  String tempMessage( Temp, 2 ) ;
+  log_printf( LOG_INFO, DEVPRO3" ← %s\n",tempMessage.c_str() ) ;  
+  if (!mqtt_client.publish(DEVPRO3,tempMessage.c_str(),true, publishQos ))
+  {
+      log_printf( LOG_ERR, "[notifyTempValue]mqtt_client.publish failed.\n" ) ;  
+      return (false) ;
+  }
 }
 
 boolean sendRelayCmd(const char* cmd)
@@ -340,14 +363,13 @@ void loop()
     float value = dht.readTemperature() ;
     if (isnan(value))
     {
-      log_printf(LOG_INFO, "DHT11 Temperature is: NaN. Skip measurement\n" ) ;      
+      log_printf(LOG_INFO, "DHT Temperature is: NaN. Skip measurement\n" ) ;      
     }
     else
     {
       temperature = value ;
     }
-    String tempMessage( temperature, 2 ) ;
-    log_printf(LOG_INFO, "DHT11 Temperature is: %s °C\n", tempMessage.c_str() ) ;
+    notifyTempValue(temperature) ;
 
     value = dht.readHumidity() ;
     if (isnan(value))

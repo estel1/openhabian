@@ -15,7 +15,7 @@ Number mqtt_water_level 	"Уровень воды,% [%.0f]"
 Number mqtt_float_level 	"Датчик половины наполнения [%d]" <softener>    (float_levels)
 Number mqtt_up_level 	    "Датчик верхнего уровня [%d]"     <softener>    (float_levels)
 Number mqtt_temp     		"Температура ,C [%.1f]"  
-
+Number mqtt_temp_outer     	"Температура на улице,C [%.1f]"  
 
 //Switch mqtt_ext_light 	"ext_light" { mqtt=">[local:ext_light:command:ON:1],>[local:ext_light:command:OFF:0],<[local:ext_light:state:OFF:0],<[local:ext_light:state:ON:1]" }
 //Switch mqtt_pump 		"Pump" { mqtt=">[local:pump:command:ON:default],>[local:pump:command:OFF:default],<[local:pump:state:OFF:default],<[local:pump:state:ON:default]" }

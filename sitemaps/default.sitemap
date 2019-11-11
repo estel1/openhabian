@@ -15,6 +15,7 @@ sitemap default label="Дом" {
         Text label="Датчики" icon="humidity"
         {
             Text 	item=mqtt_temp 			    icon="temperature"
+            Text 	item=mqtt_temp_outer		    icon="temperature"
             Text 	item=mqtt_water_level 	    icon="cistern" 			    valuecolor=[mqtt_water_level<60="red", mqtt_water_level>80="green"]
             Default item=mqtt_pump 			    label="Колодец"
 	        Default item=float_levels   	    label="Датчики наполнения" 	icon="softener" valuecolor=[mqtt_float_level<1="red", mqtt_float_level>0="green"]
@@ -25,8 +26,8 @@ sitemap default label="Дом" {
         }
         Text label="Камеры" icon="camera"
         {
-		    Webview item=TTGO_IPCAM1 url="http://192.168.1.55"      icon="camera"   height=17
-		    Webview item=TTGO_IPCAM2 url="https://www.microsoft.com/ru-ru/"     icon="camera"   height=17
-	    }
+		    Webview item=DIYMORE_IPCAM1 url="http://192.168.1.35" icon="camera"   height=31
+		    Webview item=INTERNET_DIYMORE_IPCAM1 url="http://diymorecam1.estel.keenetic.link" icon="camera"   height=31
+	}
     }
 }
