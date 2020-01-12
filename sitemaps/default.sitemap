@@ -1,5 +1,7 @@
 sitemap default label="Дом" {
     Frame {
+	Text item=Date
+	Text item=Time
         Text label="Освещение" icon="light" {
             Default item=gpio_pin2 label="Терасса"
             Default item=mqtt_ext_light label="Улица (туалет)"
@@ -18,16 +20,17 @@ sitemap default label="Дом" {
             Text 	item=mqtt_temp_outer		    icon="temperature"
             Text 	item=mqtt_water_level 	    icon="cistern" 			    valuecolor=[mqtt_water_level<60="red", mqtt_water_level>80="green"]
             Default item=mqtt_pump 			    label="Колодец"
-	        Default item=float_levels   	    label="Датчики наполнения" 	icon="softener" valuecolor=[mqtt_float_level<1="red", mqtt_float_level>0="green"]
-            Chart 	item=mqtt_temp 			    refresh=60000 			    period=16h legend=true
+	    Default item=float_levels   	    label="Датчики наполнения" 	icon="softener" valuecolor=[mqtt_float_level<1="red", mqtt_float_level>0="green"]
+	    Text item=Time
+            Chart 	item=temperatures 			    refresh=60000 			    period=16h legend=true
             Chart 	item=mqtt_water_level		refresh=60000 			    period=16h legend=true
             Chart 	item=mqtt_pump			    refresh=60000 			    period=16h legend=true
             Chart 	item=float_levels	        refresh=60000 			    period=16h legend=true
         }
         Text label="Камеры" icon="camera"
         {
-		    Webview item=DIYMORE_IPCAM1 url="http://192.168.1.35" icon="camera"   height=31
-		    Webview item=INTERNET_DIYMORE_IPCAM1 url="http://diymorecam1.estel.keenetic.link" icon="camera"   height=31
+		Webview item=DIYMORE_IPCAM1 url="http://192.168.1.35" icon="camera"   height=31
+		Webview item=INTERNET_DIYMORE_IPCAM1 url="http://diymorecam1.estel.keenetic.link" icon="camera"   height=31
 	}
     }
 }

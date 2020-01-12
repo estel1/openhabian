@@ -8,14 +8,18 @@ Switch gpio_pin7	        "Purple wire   Relay 6"  { gpio="pin:7 activelow:no ini
 Switch gpio_pin8		"Red wire      Relay 7"  { gpio="pin:8 activelow:no initialValue:low" }
 
 Group float_levels
+Group temperatures
 
-Switch mqtt_pump 		    "Колодец" 
+Switch mqtt_pump 		"Колодец" 
 Switch mqtt_ext_light 		"Свет" 
 Number mqtt_water_level 	"Уровень воды,% [%.0f]"
 Number mqtt_float_level 	"Датчик половины наполнения [%d]" <softener>    (float_levels)
-Number mqtt_up_level 	    "Датчик верхнего уровня [%d]"     <softener>    (float_levels)
-Number mqtt_temp     		"Температура ,C [%.1f]"  
-Number mqtt_temp_outer     	"Температура на улице,C [%.1f]"  
+Number mqtt_up_level 	    	"Датчик верхнего уровня [%d]"     <softener>    (float_levels)
+Number mqtt_temp     		"Температура ,°C [%.1f]" (temperatures) 
+Number mqtt_temp_outer     	"Температура на улице,°C [%.1f]" (temperatures)
+
+DateTime Time  			"[%1$tH:%1$tM]" <time>  { channel="ntp:ntp:local:dateTime" }
+DateTime Date			"Сегодня [%1$tA, %1$td.%1$tm.%1$tY]" <calendar> { channel="ntp:ntp:local:dateTime" }
 
 //Switch mqtt_ext_light 	"ext_light" { mqtt=">[local:ext_light:command:ON:1],>[local:ext_light:command:OFF:0],<[local:ext_light:state:OFF:0],<[local:ext_light:state:ON:1]" }
 //Switch mqtt_pump 		"Pump" { mqtt=">[local:pump:command:ON:default],>[local:pump:command:OFF:default],<[local:pump:state:OFF:default],<[local:pump:state:ON:default]" }
