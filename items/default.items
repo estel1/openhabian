@@ -12,6 +12,7 @@ Group temperatures
 
 Switch mqtt_pump 		"Колодец" 
 Switch mqtt_ext_light 		"Свет" 
+Switch mqtt_boiler 		"Бойлер" 
 Number mqtt_water_level 	"Уровень воды,% [%.0f]"
 Number mqtt_float_level 	"Датчик половины наполнения [%d]" <softener>    (float_levels)
 Number mqtt_up_level 	    	"Датчик верхнего уровня [%d]"     <softener>    (float_levels)

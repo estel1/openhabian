@@ -11,6 +11,7 @@ sitemap default label="Дом" {
             Default item=gpio_pin3 label="Большая комната"
             Default item=gpio_pin4 label="Кухня"
             Default item=gpio_pin5 label="Туалет, столб"
+            Default item=mqtt_boiler label="Бойлер"
             Default item=gpio_pin6 label="Маленькая комната"
             Default item=gpio_pin7 label="2й этаж"
         }
@@ -29,8 +30,7 @@ sitemap default label="Дом" {
         }
         Text label="Камеры" icon="camera"
         {
-		Webview item=DIYMORE_IPCAM1 url="http://192.168.1.35" icon="camera"   height=31
-		Webview item=INTERNET_DIYMORE_IPCAM1 url="http://diymorecam1.estel.keenetic.link" icon="camera"   height=31
+		Webview item=INTERNET_DIYMORE_IPCAM1 url="https://diymorecam1.estel.keenetic.link" icon="camera"   height=31
 	}
     }
 }
