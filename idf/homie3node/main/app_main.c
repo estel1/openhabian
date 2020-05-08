@@ -33,9 +33,18 @@
 #include "udp_logging.h"
 #include "dht.h"
 
-static const char*              TAG             = "relayNode" ;
-static const gpio_num_t         dht_gpio        = 4 ;
-static const dht_sensor_type_t  sensor_type     = DHT_TYPE_AM2301 ;
+//HOMIE3_DEV_NAME
+
+static const char*              TAG                 = CONFIG_HOMIE3_DEV_NAME ;
+
+static const int                KEYB_ON_PRESS_TIME  = 250 ; // Time to detect on btn pressed
+static const int                KEYB_OFF_PRESS_TIME = 150 ; // Time to detect off btn pressed
+static const int                KEYB_PAUSE_AFTER_DN = 500 ; // Keyboard pause after keydown 
+
+static const int                POLL_GRANULARITY    = 10 ;  // polling granularity
+static const int                USONIC_MAX_US       = 200 ; // Maximum ultrasonic echo interval, microseconds
+
+static const int                publishQos          = 2 ;
 
 typedef struct 
 {
@@ -57,24 +66,53 @@ typedef struct
     homieNode*      nodes ;
 } homieDevice ;
 
-const int publishQos = 2 ;
-
 homieProperty   relayPower      = {"power","true","true","boolean"} ;
-homieProperty   Temperature     = {"Temperature","false","true","float"} ;
+homieProperty   Temperature[]   = {
+                                    {"Temperature","false","true","float"},
+                                    {"Humidity","false","true","float"},
+                                } ;
+homieProperty   Watertank[]     = {
+                                    {"FloatLevel","false","true","float"},
+                                    {"UpLevel","false","true","float"},
+                                    {"uSonicLevel","false","true","float"},
+                                  } ;
 homieNode       nodeArray[]     = {
+#if CONFIG_HOMIE3_RELAY    
     {"relay",sizeof(relayPower)/sizeof(homieProperty),&relayPower},
-    {"Thermometer",sizeof(Temperature)/sizeof(homieProperty),&Temperature}
+#endif
+#if CONFIG_HOMIE3_THERMOMETER    
+    {"Thermometer",sizeof(Temperature)/sizeof(homieProperty),Temperature},
+#endif    
+#if CONFIG_HOMIE3_WATERTANK_SENSORS    
+    {"Watertank",sizeof(Watertank)/sizeof(homieProperty),Watertank},
+#endif    
     } ;
-homieDevice     thisDevice      = {"relayNode",sizeof(nodeArray)/sizeof(homieNode),&nodeArray} ;
+
+    enum nodeArrayIndices {
+#if CONFIG_HOMIE3_RELAY
+    relayNodeIndex,    
+#endif
+#if CONFIG_HOMIE3_THERMOMETER    
+    thermometerNodeIndex,    
+#endif    
+#if CONFIG_HOMIE3_WATERTANK_SENSORS    
+    watertankNodeIndex,
+#endif    
+    } ;
+
+homieDevice     thisDevice      = {CONFIG_HOMIE3_DEV_NAME,sizeof(nodeArray)/sizeof(homieNode),nodeArray} ;
 
 int subscribeToProperty( esp_mqtt_client_handle_t client, homieDevice* device, int nodeIndex, int propIndex) ;
+int setHomieDeviceState(esp_mqtt_client_handle_t client, homieDevice* device, const char* state) ;
 void OnDeviceConfigurationComplete(esp_mqtt_client_handle_t client)
 {
     ESP_LOGI(TAG, "OnDeviceConfigurationComplete().") ;
     
     // Subscribe to ../set to get switchon/off notification from broker
-    subscribeToProperty( client, &thisDevice, 0, 0) ;
-    
+#if CONFIG_HOMIE3_RELAY    
+    subscribeToProperty( client, &thisDevice, relayNodeIndex, 0) ;
+#endif
+
     // start normal operation
     setHomieDeviceState( client, &thisDevice, "ready" ) ;
 }
@@ -139,6 +177,21 @@ int subscribeToProperty( esp_mqtt_client_handle_t client, homieDevice* device, i
     msg_id = esp_mqtt_client_subscribe(client, szBuffer2, 0) ;
 
     ESP_LOGI(TAG, "esp_mqtt_client_subscribe: %s, msg_id=%d", szBuffer2, msg_id) ;
+    return ( msg_id ) ;
+}
+
+char szBuffer3[256] ;
+int notifyToSetProperty( esp_mqtt_client_handle_t client, homieDevice* device, int nodeIndex, int propIndex, const char* szValue )
+{
+    int msg_id ;
+
+    sprintf(szBuffer3,"homie/%s/%s/%s/set", 
+        device->name, 
+            device->nodes[nodeIndex].name, 
+                device->nodes[nodeIndex].properties[propIndex].name 
+                ) ;
+    msg_id = mqtt_publish_str( client, szBuffer3, szValue, publishQos, 1) ;
+
     return ( msg_id ) ;
 }
 
@@ -259,15 +312,21 @@ static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
             ESP_LOGI(TAG, "MQTT_EVENT_DATA");
             ESP_LOGI(TAG, "TOPIC=%.*s\r\n", event->topic_len, event->topic);
             ESP_LOGI(TAG, "DATA=%.*s\r\n", event->data_len, event->data);
+#if CONFIG_HOMIE3_RELAY    
             if (strnstr( event->data, "false", event->topic_len )!=NULL)
             {
-                ESP_LOGI(TAG, "MQTT_EVENT from %s:Switch Off", event->topic) ;
+                ESP_LOGI(TAG, "MQTT_EVENT from %.*s:Switch Off", event->topic_len, event->topic) ;
+                publishPropertyValue( client, &thisDevice, relayNodeIndex,0, "false" ) ;
+                gpio_set_level(CONFIG_HOMIE3_RELAY_GPIO_NUM, 1 ) ;
             }
-            if (strnstr( event->data, "true" )!=NULL)
+            if (strnstr( event->data, "true", event->data_len )!=NULL)
             {                
-                ESP_LOGI(TAG, "MQTT_EVENT from %s:Switch On", event->topic) ;
+                ESP_LOGI(TAG, "MQTT_EVENT from %.*s:Switch On", event->topic_len, event->topic) ;
+                publishPropertyValue( client, &thisDevice, relayNodeIndex,0, "true" ) ;
+                gpio_set_level(CONFIG_HOMIE3_RELAY_GPIO_NUM, 0 ) ;
             }
-            break;
+#endif            
+            break ;
         case MQTT_EVENT_ERROR:
             ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
             break;
@@ -283,6 +342,8 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     mqtt_event_handler_cb(event_data);
 }
 
+#if CONFIG_HOMIE3_THERMOMETER    
+static const dht_sensor_type_t  sensor_type         = DHT_TYPE_AM2301 ;
 char strValue[256] ;
 void DHT_task(void *pvParameter)
 {
@@ -290,18 +351,21 @@ void DHT_task(void *pvParameter)
     int16_t humidity    = 0 ;
     esp_mqtt_client_handle_t client = (esp_mqtt_client_handle_t) pvParameter ;
 
-    ESP_LOGI(TAG, "Starting DHT Task\n\n");
+    ESP_LOGI(TAG, "Starting DHT Task") ;
+    ESP_LOGI(TAG, "Thermometer node index: %d", thermometerNodeIndex ) ;
 
     while(1) 
     {
-        if (dht_read_data(sensor_type, dht_gpio, &humidity, &temperature) == ESP_OK)
+        if (dht_read_data(sensor_type, CONFIG_HOMIE3_THERMOMETER_GPIO_NUM, &humidity, &temperature) == ESP_OK)
         {
             ESP_LOGI(TAG, "Hum %.1f\n", humidity / 10.0 ) ;
             ESP_LOGI(TAG, "Tmp %.1f\n", temperature / 10.0 ) ;
 
-            sprintf( strValue,"%.1f", temperature / 10.0 ) ;
-            
-            publishPropertyValue( client, &thisDevice, 1,0, strValue ) ;
+            sprintf( strValue,"%.1f", temperature / 10.0 ) ;            
+            publishPropertyValue( client, &thisDevice, thermometerNodeIndex,0, strValue ) ;
+
+            sprintf( strValue,"%.1f", humidity / 10.0 ) ;            
+            publishPropertyValue( client, &thisDevice, thermometerNodeIndex,1, strValue ) ;
         }
         else
         {
@@ -311,6 +375,184 @@ void DHT_task(void *pvParameter)
         // -- wait at least 2 sec before reading again ------------
         // The interval of whole process must be beyond 2 seconds !! 
         vTaskDelay( 15000 / portTICK_RATE_MS ) ;
+    }
+}
+#endif
+
+void keyb_task(void *pvParameter)
+{
+    bool btnOn    = false ;
+    bool btnOff   = false ;
+    int msPressed = 0 ;
+    esp_mqtt_client_handle_t client = (esp_mqtt_client_handle_t) pvParameter ;
+
+    ESP_LOGI(TAG, "Starting keyboard task\n\n") ;
+
+    // initialize gpio pins
+    gpio_reset_pin( CONFIG_HOMIE3_BTN_ON_GPIO_NUM ) ;
+    gpio_set_direction( CONFIG_HOMIE3_BTN_ON_GPIO_NUM, GPIO_MODE_INPUT ) ;
+    gpio_set_pull_mode( CONFIG_HOMIE3_BTN_ON_GPIO_NUM, GPIO_PULLUP_ONLY ) ;
+
+    gpio_reset_pin( CONFIG_HOMIE3_BTN_OFF_GPIO_NUM ) ;
+    gpio_set_direction( CONFIG_HOMIE3_BTN_OFF_GPIO_NUM, GPIO_MODE_INPUT ) ;
+    gpio_set_pull_mode( CONFIG_HOMIE3_BTN_OFF_GPIO_NUM, GPIO_PULLUP_ONLY ) ;
+
+    while(1) 
+    {
+        // keyboard processing
+        btnOn    = false ;
+        btnOff   = false ;
+
+        msPressed = 0 ;
+        while( gpio_get_level(CONFIG_HOMIE3_BTN_ON_GPIO_NUM)==CONFIG_HOMIE3_BTN_ON_ACTIVE_LEVEL )
+        {        
+            vTaskDelay( 40 / portTICK_RATE_MS ) ;
+            msPressed += 40 ;
+            if (msPressed>KEYB_ON_PRESS_TIME)
+            {
+                break ;        
+            }
+        }
+        btnOn = msPressed>KEYB_ON_PRESS_TIME ;
+
+        msPressed = 0 ;
+        while( gpio_get_level(CONFIG_HOMIE3_BTN_OFF_GPIO_NUM)==CONFIG_HOMIE3_BTN_OFF_ACTIVE_LEVEL )
+        {        
+            vTaskDelay( 40 / portTICK_RATE_MS ) ;
+            msPressed += 40 ;
+            if (msPressed>KEYB_OFF_PRESS_TIME)
+            {
+                break ;        
+            }
+        }
+        btnOff = msPressed>KEYB_OFF_PRESS_TIME ;
+
+        if (btnOn && btnOff)
+        { 
+            // both btn pressed - do nothing   
+            ESP_LOGI(TAG, "Disabled button combination.\n" ) ;  
+            vTaskDelay( 100 / portTICK_RATE_MS ) ;
+        }
+        else if (btnOn)
+        {
+                //notifyToSetProperty(client,&thisDevice,0,0,"true") ;
+                mqtt_publish_str( client, CONFIG_HOMIE3_KEYBOARD_RELAY_ADDRESS, "true", publishQos, 1) ;
+
+                ESP_LOGI(TAG, "BTN_ON pressed\n." ) ;
+                // pause keyboard processing  
+                vTaskDelay( KEYB_PAUSE_AFTER_DN / portTICK_RATE_MS ) ;
+        }
+        else if (btnOff)
+        {
+                //notifyToSetProperty(client,&thisDevice,0,0,"false") ;
+                mqtt_publish_str( client, CONFIG_HOMIE3_KEYBOARD_RELAY_ADDRESS, "false", publishQos, 1) ;
+                ESP_LOGI(TAG, "BTN_OFF pressed\n." ) ;  
+                // pause keyboard processing  
+                vTaskDelay( KEYB_PAUSE_AFTER_DN / portTICK_RATE_MS ) ;
+        }
+        else
+        {
+            /* nothing pressed */
+            vTaskDelay( 100 / portTICK_RATE_MS ) ;
+        }
+        
+    }
+}
+
+static portMUX_TYPE usonicMux = portMUX_INITIALIZER_UNLOCKED ;
+char strValueWt[256] ;
+void watertank_task(void *pvParameter)
+{
+    int usWait = 0 ;
+    esp_mqtt_client_handle_t client = (esp_mqtt_client_handle_t) pvParameter ;
+
+    ESP_LOGI(TAG, "Starting watertank task\n\n") ;
+    ESP_LOGI(TAG, "Watertank node index: %d\n\n", watertankNodeIndex ) ;
+
+    // initialize gpio pins
+    if (CONFIG_HOMIE3_FLOAT_LEVEL_GPIO_NUM>=0)
+    {
+        gpio_reset_pin( CONFIG_HOMIE3_FLOAT_LEVEL_GPIO_NUM ) ;
+        gpio_set_direction( CONFIG_HOMIE3_FLOAT_LEVEL_GPIO_NUM, GPIO_MODE_INPUT ) ;
+        gpio_set_pull_mode( CONFIG_HOMIE3_FLOAT_LEVEL_GPIO_NUM, GPIO_PULLUP_ONLY ) ;
+    }
+
+    if (CONFIG_HOMIE3_UP_LEVEL_GPIO_NUM>=0)
+    {
+        gpio_reset_pin( CONFIG_HOMIE3_UP_LEVEL_GPIO_NUM ) ;
+        gpio_set_direction( CONFIG_HOMIE3_UP_LEVEL_GPIO_NUM, GPIO_MODE_INPUT ) ;
+        gpio_set_pull_mode( CONFIG_HOMIE3_UP_LEVEL_GPIO_NUM, GPIO_PULLUP_ONLY ) ;
+    }
+
+    if (CONFIG_HOMIE3_USONIC_TRIGGER_GPIO_NUM>=0)
+    {
+        gpio_reset_pin( CONFIG_HOMIE3_USONIC_TRIGGER_GPIO_NUM ) ;
+        gpio_set_direction( CONFIG_HOMIE3_USONIC_TRIGGER_GPIO_NUM, GPIO_MODE_OUTPUT ) ;
+    }
+
+    if (CONFIG_HOMIE3_USONIC_ECHO_GPIO_NUM>=0)
+    {
+        gpio_reset_pin( CONFIG_HOMIE3_USONIC_ECHO_GPIO_NUM ) ;
+        gpio_set_direction( CONFIG_HOMIE3_USONIC_ECHO_GPIO_NUM, GPIO_MODE_INPUT ) ;
+        gpio_set_pull_mode( CONFIG_HOMIE3_USONIC_ECHO_GPIO_NUM, GPIO_PULLUP_ONLY ) ;
+        publishPropertyValue( client, &thisDevice, watertankNodeIndex, 2, "0" ) ;
+    }
+
+    while(1) 
+    {
+        if (CONFIG_HOMIE3_FLOAT_LEVEL_GPIO_NUM>=0)
+        {
+            if (gpio_get_level(CONFIG_HOMIE3_FLOAT_LEVEL_GPIO_NUM)==0)
+            {
+                publishPropertyValue( client, &thisDevice, watertankNodeIndex, 0, "0" ) ;
+            }
+            else
+            {
+                publishPropertyValue( client, &thisDevice, watertankNodeIndex, 0, "1" ) ;
+            }
+        }        
+
+        if (CONFIG_HOMIE3_UP_LEVEL_GPIO_NUM>=0)
+        {
+            if (gpio_get_level(CONFIG_HOMIE3_UP_LEVEL_GPIO_NUM)==0)
+            {
+                publishPropertyValue( client, &thisDevice, watertankNodeIndex, 1, "0" ) ;
+            }
+            else
+            {
+                publishPropertyValue( client, &thisDevice, watertankNodeIndex, 1, "1" ) ;
+            }
+        }
+
+        if (CONFIG_HOMIE3_USONIC_TRIGGER_GPIO_NUM>=0)
+        {
+            portENTER_CRITICAL(&usonicMux) ;
+            gpio_set_level(CONFIG_HOMIE3_USONIC_TRIGGER_GPIO_NUM,0) ;
+            ets_delay_us(20) ;
+            gpio_set_level(CONFIG_HOMIE3_USONIC_TRIGGER_GPIO_NUM,1) ;
+            ets_delay_us(10) ;
+            gpio_set_level(CONFIG_HOMIE3_USONIC_TRIGGER_GPIO_NUM,0) ;
+            usWait          = 0 ; 
+            while(usWait<USONIC_MAX_US)
+            {
+                if (gpio_get_level(CONFIG_HOMIE3_USONIC_TRIGGER_GPIO_NUM))
+                {
+                    break ;
+                }
+                ets_delay_us(POLL_GRANULARITY) ;
+                usWait      += POLL_GRANULARITY ;
+            }
+            portEXIT_CRITICAL(&usonicMux) ;               
+
+            float distanceTo = usWait/58.0 ;
+            if (usWait<USONIC_MAX_US)
+            {
+                sprintf( strValueWt, "%5.2f", distanceTo ) ;
+                publishPropertyValue( client, &thisDevice, watertankNodeIndex, 2, strValueWt ) ;
+            }
+        }
+
+        vTaskDelay( 10000 / portTICK_RATE_MS ) ;
     }
 }
 
@@ -348,8 +590,15 @@ static void mqtt_app_start(void)
     esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, client);
     esp_mqtt_client_start(client);
 
-    ESP_LOGI(TAG, "Prepare DHT task...\n") ;
+#if CONFIG_HOMIE3_THERMOMETER    
     xTaskCreate( &DHT_task, "DHT_task", configMINIMAL_STACK_SIZE * 5, client, 5, NULL ) ;
+#endif
+#if CONFIG_HOMIE3_KEYBOARD    
+    xTaskCreate( &keyb_task, "keyb_task", configMINIMAL_STACK_SIZE * 3, client, 5, NULL ) ;
+#endif
+#if CONFIG_HOMIE3_WATERTANK_SENSORS    
+    xTaskCreate( &watertank_task, "watertank_task", configMINIMAL_STACK_SIZE * 3, client, 5, NULL ) ;
+#endif
 
 }
 
@@ -378,6 +627,13 @@ void app_main(void)
     ESP_ERROR_CHECK(example_connect()) ;
 
     udp_logging_init( "192.168.1.54", 514, udp_logging_vprintf ) ;
+
+#if CONFIG_HOMIE3_RELAY    
+    // initialize gpio pins
+    gpio_reset_pin( CONFIG_HOMIE3_RELAY_GPIO_NUM ) ;
+    gpio_set_direction( CONFIG_HOMIE3_RELAY_GPIO_NUM, GPIO_MODE_OUTPUT ) ;
+    gpio_set_level(CONFIG_HOMIE3_RELAY_GPIO_NUM, 1 ) ;
+#endif
 
     mqtt_app_start() ;
 }
