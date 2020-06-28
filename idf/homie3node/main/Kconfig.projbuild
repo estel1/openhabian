@@ -28,6 +28,18 @@ menu "Homie3 Configuration"
         help
             Relay GPIO num
 
+    config HOMIE3_RELAY_ON_LEVEL
+        int "Relay ON level" if HOMIE3_RELAY
+        default 0
+        help
+            Relay GPIO level (0 or 1) corresponded to ON position
+
+    config HOMIE3_RELAY_INIT_LEVEL
+        int "Relay startup level" if HOMIE3_RELAY
+        default 0
+        help
+            Set initial relay GPIO to 
+
     config HOMIE3_THERMOMETER
         bool "Thermometer node"
         default "y"

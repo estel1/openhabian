@@ -37,12 +37,14 @@
 
 static const char*              TAG                 = CONFIG_HOMIE3_DEV_NAME ;
 
+#if CONFIG_HOMIE3_KEYBOARD    
 static const int                KEYB_ON_PRESS_TIME  = 250 ; // Time to detect on btn pressed
 static const int                KEYB_OFF_PRESS_TIME = 150 ; // Time to detect off btn pressed
 static const int                KEYB_PAUSE_AFTER_DN = 500 ; // Keyboard pause after keydown 
 
 static const int                POLL_GRANULARITY    = 10 ;  // polling granularity
 static const int                USONIC_MAX_US       = 200 ; // Maximum ultrasonic echo interval, microseconds
+#endif
 
 static const int                publishQos          = 2 ;
 
@@ -317,13 +319,13 @@ static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
             {
                 ESP_LOGI(TAG, "MQTT_EVENT from %.*s:Switch Off", event->topic_len, event->topic) ;
                 publishPropertyValue( client, &thisDevice, relayNodeIndex,0, "false" ) ;
-                gpio_set_level(CONFIG_HOMIE3_RELAY_GPIO_NUM, 1 ) ;
+                gpio_set_level(CONFIG_HOMIE3_RELAY_GPIO_NUM, (CONFIG_HOMIE3_RELAY_ON_LEVEL+1)%2 ) ;
             }
             if (strnstr( event->data, "true", event->data_len )!=NULL)
             {                
                 ESP_LOGI(TAG, "MQTT_EVENT from %.*s:Switch On", event->topic_len, event->topic) ;
                 publishPropertyValue( client, &thisDevice, relayNodeIndex,0, "true" ) ;
-                gpio_set_level(CONFIG_HOMIE3_RELAY_GPIO_NUM, 0 ) ;
+                gpio_set_level(CONFIG_HOMIE3_RELAY_GPIO_NUM, CONFIG_HOMIE3_RELAY_ON_LEVEL ) ;
             }
 #endif            
             break ;
@@ -379,6 +381,7 @@ void DHT_task(void *pvParameter)
 }
 #endif
 
+#if CONFIG_HOMIE3_KEYBOARD    
 void keyb_task(void *pvParameter)
 {
     bool btnOn    = false ;
@@ -458,7 +461,9 @@ void keyb_task(void *pvParameter)
         
     }
 }
+#endif
 
+#if CONFIG_HOMIE3_WATERTANK_SENSORS    
 static portMUX_TYPE usonicMux = portMUX_INITIALIZER_UNLOCKED ;
 char strValueWt[256] ;
 void watertank_task(void *pvParameter)
@@ -555,6 +560,7 @@ void watertank_task(void *pvParameter)
         vTaskDelay( 10000 / portTICK_RATE_MS ) ;
     }
 }
+#endif
 
 static void mqtt_app_start(void)
 {
@@ -632,7 +638,7 @@ void app_main(void)
     // initialize gpio pins
     gpio_reset_pin( CONFIG_HOMIE3_RELAY_GPIO_NUM ) ;
     gpio_set_direction( CONFIG_HOMIE3_RELAY_GPIO_NUM, GPIO_MODE_OUTPUT ) ;
-    gpio_set_level(CONFIG_HOMIE3_RELAY_GPIO_NUM, 1 ) ;
+    gpio_set_level(CONFIG_HOMIE3_RELAY_GPIO_NUM, CONFIG_HOMIE3_RELAY_INIT_LEVEL ) ;
 #endif
 
     mqtt_app_start() ;
